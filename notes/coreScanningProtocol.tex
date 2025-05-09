@@ -1,0 +1,38 @@
+\documentclass[11pt,letter]{article}
+\usepackage[top=1.00in, bottom=1.0in, left=1.1in, right=1.1in]{geometry}
+\renewcommand{\baselinestretch}{1.5}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\def\labelitemi{--}
+\begin{document}
+
+\title{Core scanning protocol} 
+\date{\today}
+\maketitle
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\begin{enumerate}
+\item Follow the instructions for TINA to open the app.
+\item After selecting "Serial connection," go to the home first.
+\item Take the cores that are ready for scanning. Try to group and align cores of similar lengths together.
+\item Ensure that the longest core is placed as the first core on the right.
+\item Record the labels of the core, then place the core on the holder.
+\item Measure the length of the longest core and set the sample length to this value. Set the sample width to 1 mm.
+\item Repeat step 5 for the remaining cores, and always try to align the centers of all cores along the same line.
+\item Once all slots on the first holder are filled, move the lens until you can see the first core.
+\item Nevigate to one end of the core, set the movement length to match the sample length, then go to the opposite end. Check whether the core is vertically aligned; adjust if needed.
+\item If everything looks aligned, return to one end of the core and set the movement length to half of the sample length. This will allow you to move to the center of the first sample.
+\item Zoom in until the cells of the core are clearly visible.
+\item Add the sample in the app and enter all relevant information. Start with an overlap of 60\%; if the scan is incomplete, increase the overlap to 70\% and rescan if necessary.
+\item Move only horizontally to the next sample. Repeat steps 11 and 12 for each core.
+\item After entering information for all cores on the first holder, repeat from step 4 for the second holder.
+\item Once all cores are entered for both holders, click “Start Capture All Samples.”
+\item After scanning is complete, check all scans in the app folder. Delete folders for any samples that were not scanned properly.
+\item If any core is not scanned correctly, try increasing the overlap and scan it again in the next batch. If it still cannot be scanned, place it in the “Cannot be scanned” box.
+\item In the terminal, type the following command to to get rid of all the frames:``\texttt{find . -name \textbackslash frame* -type f -delete}''
+	\end{enumerate}
+\end{document}
