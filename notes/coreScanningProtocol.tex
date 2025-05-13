@@ -20,19 +20,20 @@
 \item After selecting "Serial connection," go to the home first.
 \item Take the cores that are ready for scanning. Try to group and align cores of similar lengths together.
 \item Ensure that the longest core is placed as the first core on the right.
-\item Record the labels of the core, then place the core on the holder.
+\item Record the labels of the core in the green cover notebook, then place the core on the holder.
 \item Measure the length of the longest core and set the sample length to this value. Set the sample width to 1 mm.
 \item Repeat step 5 for the remaining cores, and always try to align the centers of all cores along the same line.
 \item Once all slots on the first holder are filled, move the lens until you can see the first core.
 \item Nevigate to one end of the core, set the movement length to match the sample length, then go to the opposite end. Check whether the core is vertically aligned; adjust if needed.
 \item If everything looks aligned, return to one end of the core and set the movement length to half of the sample length. This will allow you to move to the center of the first sample.
 \item Zoom in until the cells of the core are clearly visible.
-\item Add the sample in the app and enter all relevant information. Start with an overlap of 60\%; if the scan is incomplete, increase the overlap to 70\% and rescan if necessary.
+\item Add the sample in the app and enter all relevant information. Species name in the species box, stand name in the ID1 box, tree tag number with the sample number in the ID2 box. Start with an overlap of 60\%, make sure the box for core sample is selected, click add sample.
 \item Move only horizontally to the next sample. Repeat steps 11 and 12 for each core.
 \item After entering information for all cores on the first holder, repeat from step 4 for the second holder.
 \item Once all cores are entered for both holders, click “Start Capture All Samples.”
 \item After scanning is complete, check all scans in the app folder. Delete folders for any samples that were not scanned properly.
-\item If any core is not scanned correctly, try increasing the overlap and scan it again in the next batch. If it still cannot be scanned, place it in the “Cannot be scanned” box.
-\item In the terminal, type the following command to to get rid of all the frames:``\texttt{find . -name \textbackslash frame* -type f -delete}''
+\item If any core is not scanned correctly, try increasing the overlap and scan it again in the next batch with 70\% overlapping. If it still cannot be scanned, place it in the “Cannot be scanned” box.
+\item For cores got scanned successfully, put them back into pairs if both of them are scanned, place them in the ``Done scanning'' box. For the single core, use the flagging tap to make a bundle of them.
+\item After checking all the scannings, in the terminal, type the following command to to get rid of all the frames:``\texttt{find . -name \textbackslash frame* -type f -delete}''
 	\end{enumerate}
 \end{document}
