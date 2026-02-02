@@ -1,0 +1,86 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Growth-Reproduction Trade-off Model}
+\author{Xiaomao Wang}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Conceptual Framework}
+
+We can approach the growth-reproduction trade-off from either the individual-tree level or the stand (population) level. Each approach has advantages and limitations, which will be discussed in the following subsections.
+
+The overall idea is to construct a generative model in which trees (or stands) have an annual energy (carbon) pool that is allocated among different life processes. In this study, we focus on two processes only: reproduction and radial growth, so we will simplify the model into these two main components.
+
+\subsection{Individual Level}
+
+For each individual tree, we assume there is an energy (or carbon) pool available in year $t$. This allocation framework can be expressed as:
+\begin{equation}
+A_t = G_t + R_t,
+\end{equation}
+where:
+\begin{itemize}
+    \item $A_t$ is the energy (or carbon) assimilated in year $t$,
+    \item $G_t$ is growth in year $t$,
+    \item $R_t$ is reproduction in year $t$.
+\end{itemize}
+
+Ideally, reproduction should include both seed production and the formation of reproductive buds for the following year. However, since only seed production data are available, $R_t$ is restricted to seed production in this formulation.
+
+\paragraph{Carbon Availability}
+
+To quantify $A_t$, we could consider existing approaches such as the 3-PG model. However, a big challenge at the individual level is that most existing models for estimating NPP are at the stand level rather than the individual-tree level.
+
+Alternatively, maybe we could introduce a latent variable representing the total carbon available for allocation in year $t$. We assume that carbon availability is driven by climate conditions (good years provide more resources) and tree size (larger trees may assimilate more carbon, potentially with an asymptote):
+\begin{equation}
+C_t \sim f(\text{climate}_t, \text{size}_t, \varepsilon),
+\end{equation}
+where $\varepsilon$ represents unexplained variation.
+
+\paragraph{Carbon Allocation}
+
+Carbon available in year $t$ is partitioned between reproduction and growth. For individual $i$ in year $t$, we define:
+\begin{align}
+R_{i,t} &= p_{i,t} \cdot C_{i,t}, \\
+G_{i,t} &= (1 - p_{i,t}) \cdot C_{i,t},
+\end{align}
+where $p_{i,t}$ is the proportion of carbon allocated to reproduction.
+
+\subsection{Stand Level}
+
+At the stand level, NPP can be estimated directly. The only challenge here will be how to quantify the stand level growth. We could ever use the stand-level average or sum it up.
+\paragraph{Carbon Availability}
+
+Carbon availability at the stand level can be estimated using the 3-PG model. Required input data include:
+\begin{itemize}
+    \item Climate variables: solar radiation, temperature, rainfall, and vapor pressure deficit (VPD),
+    \item Stand data: species composition, initial stocking (stems ha$^{-1}$), stand age, and basal area.
+\end{itemize}
+
+\paragraph{Carbon Allocation}
+
+Similar to the individual-level formulation, carbon at the stand level is partitioned between reproduction and growth, either as a stand mean or a stand total. For stand $k$ in year $t$, we define:
+\begin{align}
+R_{k,t} &= p_{k,t} \cdot C_{k,t}, \\
+G_{k,t} &= (1 - p_{k,t}) \cdot C_{k,t}.
+\end{align}
+
+Stand-level growth can also be expressed as the average of individual-level growth:
+\begin{equation}
+G_{k,t} = \frac{1}{N_{k,t}} \sum_{i=1}^{N_{k,t}} G_{i,t},
+\end{equation}
+where $N_{k,t}$ is the number of sampled trees in stand $k$ during year $t$.
+
+\subsection{Pros and Cons}
+
+Individual-level model allowa for finer resolution and better use of individual-level data when such data are available. However, estimating individual-level carbon assimilation requires strong assumptions and is might be challenging due to data limitations.
+
+In the Mt. Rainier project, seed production is measured at the stand level using seed traps. Thus, using an individual-level model requires downscaling stand-level seed data to individual trees. Given known spatial coordinates for each tree and seed trap, it may be possible to estimate each tree’s contribution to seed production as a function of distance to the trap and tree size.
+
+\end{document}
