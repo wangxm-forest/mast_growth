@@ -14,7 +14,7 @@
 
 \section{Conceptual Framework}
 
-We can approach the growth-reproduction trade-off from either the individual-tree level or the stand (population) level. Each approach has advantages and limitations, which will be discussed in the following subsections.
+We can approach the growth-reproduction trade-off from the individual-tree level.
 
 The overall idea is to construct a generative model in which trees (or stands) have an annual energy (carbon) pool that is allocated among different life processes. In this study, we focus on two processes only: reproduction and radial growth, so we will simplify the model into these two main components.
 
@@ -38,48 +38,53 @@ Ideally, reproduction should include both seed production and the formation of r
 To quantify $A_t$, we could consider existing approaches such as the 3-PG model. However, a big challenge at the individual level is that most existing models for estimating NPP are at the stand level rather than the individual-tree level.
 
 Alternatively, maybe we could introduce a latent variable representing the total carbon available for allocation in year $t$. We assume that carbon availability is driven by climate conditions (good years provide more resources) and tree size (larger trees may assimilate more carbon, potentially with an asymptote):
-\begin{equation}
-C_t \sim f(\text{climate}_t, \text{size}_t, \varepsilon),
-\end{equation}
-where $\varepsilon$ represents unexplained variation.
-
-\paragraph{Carbon Allocation}
-
-Carbon available in year $t$ is partitioned between reproduction and growth. For individual $i$ in year $t$, we define:
 \begin{align}
-R_{i,t} &= p_{i,t} \cdot C_{i,t}, \\
-G_{i,t} &= (1 - p_{i,t}) \cdot C_{i,t},
+C_{i,t} &=\alpha_{sp} + \alpha_{\text{site}} +\beta_{1,sp} (\text{DBH}) + \beta_{2,sp} (\text{climate variables})
 \end{align}
-where $p_{i,t}$ is the proportion of carbon allocated to reproduction.
-
-\subsection{Stand Level}
-
-At the stand level, NPP can be estimated directly. The only challenge here will be how to quantify the stand level growth. We could ever use the stand-level average or sum it up.
-\paragraph{Carbon Availability}
-
-Carbon availability at the stand level can be estimated using the 3-PG model. Required input data include:
+where:
 \begin{itemize}
-    \item Climate variables: solar radiation, temperature, rainfall, and vapor pressure deficit (VPD),
-    \item Stand data: species composition, initial stocking (stems ha$^{-1}$), stand age, and basal area.
+    \item $\alpha_{sp}$ is the species-specific intercept for species $sp$;
+    \item $\alpha_{\text{site}}$ is the stand-specific intercept for site;
+    \item $\beta_{1,sp}$ is the slope for the relationship between tree size and carbon availability;
+    \item $\beta_{2,sp}$ is the slope for the relationship between climate variables and carbon availability.
 \end{itemize}
 
 \paragraph{Carbon Allocation}
 
-Similar to the individual-level formulation, carbon at the stand level is partitioned between reproduction and growth, either as a stand mean or a stand total. For stand $k$ in year $t$, we define:
+Carbon available in year $t$ is partitioned between reproduction and growth. For reproduction, we ssume that the average carbon allocation for a seed is constant, so we can convert the seed count into carbon allocation by multiplying a factor. For growth, there is a species-specific allometric equation to calculate the total carbon:
 \begin{align}
-R_{k,t} &= p_{k,t} \cdot C_{k,t}, \\
-G_{k,t} &= (1 - p_{k,t}) \cdot C_{k,t}.
+Total aboveground biomass &= \beta_1(DBH)^{\beta_{2}} \beta_3(height)\\
+Total carbon &= 50\%Total aboveground biomass
 \end{align}
+We can therefore exchange the DBH with ring width of that year to calculate the carbon in a certain year. And since all the trees we have are adult trees, we can ignore the change of height.\\
 
-Stand-level growth can also be expressed as the average of individual-level growth:
+For individual $i$ in year $t$, we define:
+\begin{align}
+R_{i,t} &= \gamma_{sp} \cdot sc \\
+G_{i,t} &= \beta_{3,sp} (rw)^{\beta_{4,sp}} \cdot 0.5
+\end{align}
+where:
+\begin{itemize}
+    \item  $\gamma_{sp}$ is the species-specific slope for relationship between seed count (sc) and carbon allocation to reproduction for species $sp$;
+    \item $\beta_{3,sp}$, $\beta_{4,sp}$ are the parameters transforming ring width (rw) and height to carbon allocation to growth for species $sp$.
+\end{itemize}
+
+\subsection{Likelihood}
+Given that seed production is discret and can vary a lot because of masting, we model the observed seed count $sc_{i,t}$ using a negative binomial distribution. The expected seed count is derived from the reproduction carbon allocation $R_{i,t}$:
 \begin{equation}
-G_{k,t} = \frac{1}{N_{k,t}} \sum_{i=1}^{N_{k,t}} G_{i,t},
+    sc_{i,t} \sim \text{NegBinomial} \left( \frac{R_{i,t}}{\gamma_{sp}}, \phi_{sp} \right)
 \end{equation}
-where $N_{k,t}$ is the number of sampled trees in stand $k$ during year $t$.
+where $\phi_{sp}$ represents the species-specific dispersion parameter.\\
+
+The observed ring width $rw_{i,t}$ is continuous and always positive. We model this using a lognormal distribution. The expected ring width is derived from the growth carbon allocation $G_{i,t}$:
+\begin{equation}
+    rw_{i,t} \sim \text{Lognormal} \left( \left[ \left( \frac{G_{i,t}}{0.5 \cdot \beta_{3,sp}} \right)^{1/\beta_{4,sp}} \right], \sigma^2_{rw} \right)
+\end{equation}
+where $\sigma^2_{rw}$ represents the error variance.
 
 \subsection{Pros and Cons}
 
-Individual-level model allowa for finer resolution and better use of individual-level data when such data are available. However, estimating individual-level carbon assimilation requires strong assumptions and is might be challenging due to data limitations.
+Individual-level model allows for finer resolution and better use of individual-level data when such data are available. However, estimating individual-level carbon assimilation requires strong assumptions and is might be challenging due to data limitations.
 
 In the Mt. Rainier project, seed production is measured at the stand level using seed traps. Thus, using an individual-level model requires downscaling stand-level seed data to individual trees. Given known spatial coordinates for each tree and seed trap, it may be possible to estimate each tree’s contribution to seed production as a function of distance to the trap and tree size.
 
