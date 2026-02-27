@@ -39,14 +39,14 @@ To quantify $A_t$, we could consider existing approaches such as the 3-PG model.
 
 Alternatively, maybe we could introduce a latent variable representing the total carbon available for allocation in year $t$. We assume that carbon availability is driven by climate conditions (good years provide more resources) and tree size (larger trees may assimilate more carbon, potentially with an asymptote):
 \begin{align}
-C_{i,t} &=\alpha_{sp} + \alpha_{\text{site}} +\beta_{1,sp} (\text{DBH}) + \beta_{2,sp} (\text{climate variables})
+C_{i,t} &=\alpha + \alpha_{\text{site}} +\beta_{1} (\text{DBH}) + \beta_{2} (\text{climate variables})
 \end{align}
 where:
 \begin{itemize}
-    \item $\alpha_{sp}$ is the species-specific intercept for species $sp$;
+    \item $\alpha$ is the intercept;
     \item $\alpha_{\text{site}}$ is the stand-specific intercept for site;
-    \item $\beta_{1,sp}$ is the slope for the relationship between tree size and carbon availability;
-    \item $\beta_{2,sp}$ is the slope for the relationship between climate variables and carbon availability.
+    \item $\beta_{1}$ is the slope for the relationship between tree size and carbon availability;
+    \item $\beta_{2}$ is the slope for the relationship between climate variables and carbon availability.
 \end{itemize}
 
 \paragraph{Carbon Allocation}
@@ -60,25 +60,25 @@ We can therefore exchange the DBH with ring width of that year to calculate the 
 
 For individual $i$ in year $t$, we define:
 \begin{align}
-R_{i,t} &= \gamma_{sp} \cdot sc \\
-G_{i,t} &= \beta_{3,sp} (rw)^{\beta_{4,sp}} \cdot 0.5
+R_{i,t} &= \gamma \cdot sc \\
+G_{i,t} &= \beta_{3} (rw)^{\beta_{4}} \cdot 0.5
 \end{align}
 where:
 \begin{itemize}
-    \item  $\gamma_{sp}$ is the species-specific slope for relationship between seed count (sc) and carbon allocation to reproduction for species $sp$;
-    \item $\beta_{3,sp}$, $\beta_{4,sp}$ are the parameters transforming ring width (rw) and height to carbon allocation to growth for species $sp$.
+    \item  $\gamma$ is the slope for relationship between seed count (sc) and carbon allocation to reproduction;
+    \item $\beta_{3}$, $\beta_{4}$ are the parameters transforming ring width (rw) and height to carbon allocation to growth.
 \end{itemize}
 
 \subsection{Likelihood}
 Given that seed production is discret and can vary a lot because of masting, we model the observed seed count $sc_{i,t}$ using a negative binomial distribution. The expected seed count is derived from the reproduction carbon allocation $R_{i,t}$:
 \begin{equation}
-    sc_{i,t} \sim \text{NegBinomial} \left( \frac{R_{i,t}}{\gamma_{sp}}, \phi_{sp} \right)
+    sc_{i,t} \sim \text{NegBinomial} \left( \frac{R_{i,t}}{\gamma}, \phi_{sp} \right)
 \end{equation}
-where $\phi_{sp}$ represents the species-specific dispersion parameter.\\
+where $\phi$ represents the dispersion parameter.\\
 
 The observed ring width $rw_{i,t}$ is continuous and always positive. We model this using a lognormal distribution. The expected ring width is derived from the growth carbon allocation $G_{i,t}$:
 \begin{equation}
-    rw_{i,t} \sim \text{Lognormal} \left( \left[ \left( \frac{G_{i,t}}{0.5 \cdot \beta_{3,sp}} \right)^{1/\beta_{4,sp}} \right], \sigma^2_{rw} \right)
+    rw_{i,t} \sim \text{Lognormal} \left( \left[ \left( \frac{G_{i,t}}{0.5 \cdot \beta_{3}} \right)^{1/\beta_{4}} \right], \sigma^2_{rw} \right)
 \end{equation}
 where $\sigma^2_{rw}$ represents the error variance.
 
