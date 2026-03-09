@@ -83,3 +83,62 @@ par(mfrow = c(3,3))
 util$plot_div_pairs(names, names, samples, diagnostics)
 dev.off()
 
+pdf("figures/priorPosteriorPlot.pdf", height = 9, width = 9)
+par(mfrow = c(3,3))
+util$plot_expectand_pushforward(samples[['alpha']], 50, display_name = "alpha")
+curve(dlnorm(x, log(90), 0.5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2)
+
+util$plot_expectand_pushforward(samples[['alpha_site[1]']], 50, display_name = "alpha_site[1]")
+curve(dnorm(x, 0, 10),
+      add = TRUE,
+      col = "blue",
+      lwd = 2)
+
+util$plot_expectand_pushforward(samples[['beta_dbh']], 50, display_name = "beta_dbh")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+
+util$plot_expectand_pushforward(samples[['beta_GST']], 50, display_name = "beta_GST")
+curve(dnorm(x, 0, 5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+
+util$plot_expectand_pushforward(samples[['beta_growth1']], 50, display_name = "beta_growth1")
+curve(dlnorm(x, 1, 0.5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2)
+
+util$plot_expectand_pushforward(samples[['beta_growth2']], 50, display_name = "beta_growth2")
+curve(dlnorm(x, 1, 0.5),
+      add=TRUE, col="blue", lwd=2, lty=2)
+
+util$plot_expectand_pushforward(samples[['gamma']], 50, display_name = "gamma")
+curve(dnorm(x, 0, 5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+
+util$plot_expectand_pushforward(samples[['phi']], 50, display_name = "phi")
+curve(dnorm(x, 0, 5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+
+util$plot_expectand_pushforward(samples[['sigma']], 50, display_name = "sigma")
+curve(dnorm(x, 0, 5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+dev.off()
