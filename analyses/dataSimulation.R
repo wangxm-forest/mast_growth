@@ -13,9 +13,9 @@ setwd("C:/PhD/Project/PhD_thesis/mast_growth/analyses")
 util <- new.env()
 source('mcmc_analysis_tools_rstan.R', local=util)
 source('mcmc_visualization_tools.R', local=util)
-source('stan_utility.R')
-lsf.str()
+
 set.seed(123)
+###for tradeoff model###
 ###Set values for parameters###
 N <- 50
 NSite <- 3
@@ -142,3 +142,67 @@ curve(dnorm(x, 0, 5),
       lwd = 2,
       lty = 2)
 dev.off()
+
+###for generative model###
+N <- 20
+DBH <- runif(N, 20, 40)
+GST <- runif(N, 15, 25)
+
+C <- numeric(N)
+gamma <- runif(N, 0.1, 0.5)
+
+G <- numeric(N)
+G[1] <- 48
+R <- numeric(N)
+R[1] <- 32
+
+rw <- numeric(N)
+rw[1] <- 0.2
+sc <- numeric(N)
+sc[1] <- 1000
+
+# true parameters
+alpha <- 50
+beta_dbh <- 0.5
+beta_GST <- 0.5
+sigma_C <- 5
+
+theta <- 0.005
+sigma_rw <- 0.1
+
+eta <- 50
+
+
+for(n in 1:N){
+
+  muC <- alpha + beta_dbh*DBH[n] + beta_GST*GST[n]
+  C[n] <- rnorm(1, muC, sigma_C)
+  
+  
+  # carbon allocation
+  G[n] <- (1-gamma[n]) * C[n]
+  R[n] <- gamma[n] * C[n]
+  
+  # ring width
+  rw[n] <- rnorm(1, theta*G[n], sigma_rw)
+  
+  # seed counts
+  sc[n] <- rpois(1, eta*R[n])
+  
+  # update DBH
+  DBH[n] <- DBH[n-1] + rw[n]
+  
+}
+
+stanData <- list(
+  N = N,
+  sc = sc,
+  rw = rw,
+  DBH = DBH,
+  GST = GST
+)
+
+mod <- stan_model(file='stan/tradeOffGenerative.stan')
+
+
+fit <- stan(file='stan/tradeOffGenerative.stan', data=stanData, seed=112234, control=list(adapt_delta=0.99))
