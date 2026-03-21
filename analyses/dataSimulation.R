@@ -75,7 +75,8 @@ names <- c(grep('alpha', names(samples), value = TRUE),
            grep('beta_growth2', names(samples), value = TRUE),
            grep('gamma', names(samples), value = TRUE),
            grep('phi', names(samples), value = TRUE),
-           grep('sigma', names(samples), value = TRUE))
+           grep('sigma', names(samples), value = TRUE),
+           grep('theta', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
@@ -136,16 +137,16 @@ curve(dnorm(x, 0, 1),
       lty = 2)
 abline(v = 0.01, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['phi_sc']], 50, display_name = "phi")
-curve(dnorm(x, 0, 5),
+util$plot_expectand_pushforward(samples[['phi_sc']], 50, display_name = "phi_sc")
+curve(dgamma(x, 2, 0.1),
       add = TRUE,
       col = "blue",
       lwd = 2,
       lty = 2)
 abline(v = 2, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['sigma']], 50, display_name = "sigma")
-curve(dnorm(x, 0, 5),
+util$plot_expectand_pushforward(samples[['sigma_rw']], 50, display_name = "sigma_rw")
+curve(dnorm(x, 0, 1),
       add = TRUE,
       col = "blue",
       lwd = 2,
@@ -215,7 +216,8 @@ names <- c(grep('alpha', names(samples), value = TRUE),
            grep('beta_growth2', names(samples), value = TRUE),
            grep('gamma', names(samples), value = TRUE),
            grep('phi', names(samples), value = TRUE),
-           grep('sigma', names(samples), value = TRUE))
+           grep('sigma', names(samples), value = TRUE),
+           grep('theta', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
@@ -267,6 +269,14 @@ util$plot_expectand_pushforward(samples[['beta_growth2']], 50, display_name = "b
 curve(dlnorm(x, 1, 0.5),
       add=TRUE, col="blue", lwd=2, lty=2)
 abline(v = 3.2, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['theta']], 50, display_name = "theta")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.01, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['phi_sc']], 50, display_name = "phi_sc")
 curve(dgamma(x, 2, 0.1),
@@ -349,14 +359,6 @@ curve(dnorm(x, 0, 1),
 abline(v = 0.5, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['gamma[8]']], 50, display_name = "gamma[8]")
-curve(dnorm(x, 0, 1),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
-
-util$plot_expectand_pushforward(samples[['gamma[9]']], 50, display_name = "gamma[9]")
 curve(dnorm(x, 0, 1),
       add = TRUE,
       col = "blue",

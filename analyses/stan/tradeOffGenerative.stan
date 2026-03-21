@@ -13,7 +13,7 @@ parameters {
   real<lower=0> C[N];
   real alpha;
   vector[NSite] alpha_site;
-  real beta_dbh;
+  real<lower=0> beta_dbh;
   real beta_GST;
   real<lower=0> sigma_c;
 
@@ -48,17 +48,17 @@ model {
   sigma_rw ~ normal(0, 1);
 
   phi_sc ~ gamma(2, 0.1);
-  theta ~ normal(0, 5);
+  theta ~ normal(0, 1);
 
   for (n in 1:N) {
 
     // carbon
-    target += normal_lpdf(
+    target += lognormal_lpdf(
       C[n] |
-      alpha
+      log(alpha
       + alpha_site[site[n]]
       + beta_dbh * DBH[n]
-      + beta_GST * GST[n],
+      + beta_GST * GST[n]),
       sigma_c
     );
 
@@ -66,10 +66,10 @@ model {
     {
       real G_n = (1 - gamma[n]) * C[n];
 
-      target += normal_lpdf(rw[n] | (pow(G_n / beta_growth1 + pow(DBH[n], beta_growth2),
+      target += lognormal_lpdf(rw[n] | log((pow(G_n / beta_growth1 + pow(DBH[n], beta_growth2),
             1 / beta_growth2)
         - DBH[n]
-      ) / 2, sigma_rw);
+      ) / 2), sigma_rw);
     }
 
     // reproducton
@@ -82,31 +82,4 @@ model {
   }
 }
 
-generated quantities {
 
-  vector[N] C_pred;
-  vector[N] gamma_pred;
-  vector[N] G_pred;
-  vector[N] R_pred;
-
-  vector[N] rw_pred;
-  array[N] int sc_pred;
-
-  for (n in 1:N) {
-  // carbon
-  C_pred[n] = normal_rng(alpha + alpha_site[site[n]] + beta_dbh * DBH[n] + beta_GST * GST[n],sigma_c);
-
-  gamma_pred[n] = gamma[n];
-  // allocation
-  G_pred[n] = (1 - gamma_pred[n]) * C_pred[n];
-  R_pred[n] = gamma_pred[n] * C_pred[n];
-  // growth
-  rw_pred[n] = normal_rng((pow(G_pred[n] / beta_growth1 + pow(DBH[n], beta_growth2),
-            1 / beta_growth2)
-        - DBH[n]
-      ) / 2, sigma_rw);
-  // reproduction
-  sc_pred[n] = neg_binomial_2_rng(R_pred[n] / theta, phi_sc);
-
-  }
-}

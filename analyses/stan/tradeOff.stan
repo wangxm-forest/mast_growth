@@ -18,15 +18,13 @@ parameters {
 #  real beta_GSP;
 
   // Reproduction
-  real<lower=0> gamma;
+  real<lower=0> theta;
   vector<lower=0>[N] R;
-  
+  real<lower=0> phi_sc; 
   // Growth
   real<lower=0> beta_growth1;
   real<lower=0> beta_growth2;
-
-  real<lower=0> phi;
-  real<lower=0> sigma;
+  real<lower=0> sigma_rw;
 }
 
 transformed parameters {
@@ -39,7 +37,7 @@ transformed parameters {
     C[n] = alpha + alpha_site[site[n]] + beta_dbh * DBH[n]
            + beta_GST * GST[n];
 
-    sc_pred[n] = R[n] / gamma;
+    sc_pred[n] = R[n] / theta;
 
     G[n] = C[n] - R[n];
 
@@ -55,30 +53,30 @@ model {
 #  beta_GSP ~ normal(0, 5);
   beta_growth1 ~ lognormal(1, 0.5);
   beta_growth2 ~ lognormal(1, 0.5);
-  gamma ~ normal(0, 5);
-  phi ~ normal(0, 5);
-  sigma ~ normal(0, 0.5);
+  theta ~ normal(0, 1);
+  phi_sc ~ gamma(2, 0.1);
+  sigma_rw ~ normal(0, 1);
   
   R ~ uniform(0, C);
 
   // Likelihoods
   for (n in 1:N) {
-    sc[n] ~ neg_binomial_2(sc_pred[n], phi);
-    rw[n] ~ lognormal(log(rw_pred[n]), sigma);
+    sc[n] ~ neg_binomial_2(sc_pred[n], phi_sc);
+    rw[n] ~ lognormal(log(rw_pred[n]), sigma_rw);
     //change log(rw) to non-center parameterization
   }
 }
 
-generated quantities {
-  vector[N] sc_rep;
-  vector[N] rw_rep;
-  vector[N] frac_R;
+#generated quantities {
+#  vector[N] sc_rep;
+#  vector[N] rw_rep;
+#  vector[N] frac_R;
 
-  for (n in 1:N) {
+#  for (n in 1:N) {
 
-    sc_rep[n] = neg_binomial_2_rng(R[n] / gamma, phi);
+#    sc_rep[n] = neg_binomial_2_rng(R[n] / theta, phi_sc);
 
-    rw_rep[n] = lognormal_rng(log(pow(G[n] / (0.5 * beta_growth1), 1 / beta_growth2)), sigma);
-    frac_R[n] = R[n]/(R[n] + G[n]);
-  }
-}
+#    rw_rep[n] = lognormal_rng(log(pow(G[n] / (0.5 * beta_growth1), 1 / beta_growth2)), sigma_rw);
+#    frac_R[n] = R[n]/(R[n] + G[n]);
+#  }
+#}
