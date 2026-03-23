@@ -151,7 +151,7 @@ curve(dnorm(x, 0, 1),
       col = "blue",
       lwd = 2,
       lty = 2)
-abline(v = 0.2, col = "red", lwd = 2)
+abline(v = 0.5, col = "red", lwd = 2)
 dev.off()
 
 rm(list = ls())
@@ -286,14 +286,6 @@ curve(dgamma(x, 2, 0.1),
       lty = 2)
 abline(v = 2, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['sigma_c']], 50, display_name = "sigma_c")
-curve(dnorm(x, 0, 1),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      lty = 2)
-abline(v = 0.1, col = "red", lwd = 2)
-
 util$plot_expectand_pushforward(samples[['sigma_rw']], 50, display_name = "sigma_rw")
 curve(dnorm(x, 0, 1),
       add = TRUE,
@@ -301,6 +293,14 @@ curve(dnorm(x, 0, 1),
       lwd = 2,
       lty = 2)
 abline(v = 0.5, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['sigma_c']], 50, display_name = "sigma_c")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.1, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['gamma[1]']], 50, display_name = "gamma[1]")
 curve(dnorm(x, 0, 1),
