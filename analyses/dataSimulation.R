@@ -30,9 +30,9 @@ alpha_site <- c(0, 20, -10)
 beta_dbh <- 0.5
 beta_GST <- 0.5
 #beta_GSP <- 0.3
-beta_growth1 <- 0.04
+beta_growth1 <- 4
 beta_growth2 <- 3.2
-theta <- 0.01
+theta <- 1
 phi_sc <- 2
 sigma_rw <- 0.5
 
@@ -169,12 +169,12 @@ beta_dbh <- 0.5
 beta_GST <- 0.5
 sigma_c <- 0.1
 #beta_GSP <- 0.3
-beta_growth1 <- 0.04
+beta_growth1 <- 4
 beta_growth2 <- 3.2
 gamma <- 0.5
 sigma_rw <- 0.5
 phi_sc <- 2
-theta <- 0.01
+theta <- 1
 
 
   Carb <- rlnorm(N, meanlog = log(alpha + alpha_site[site] + beta_dbh * DBH + beta_GST * GST), sdlog = sigma_c)
@@ -184,10 +184,10 @@ theta <- 0.01
   R_n <- gamma * Carb
   
   # ring width
-  rw <- rlnorm(N, meanlog = log(((G_n / beta_growth1 + DBH^beta_growth2)^(1 / beta_growth2) - DBH) / 2), sdlog = sigma_rw)
+  rw <- rlnorm(N, meanlog = log(((G_n / (beta_growth1/100) + DBH^beta_growth2)^(1 / beta_growth2) - DBH) / 2), sdlog = sigma_rw)
   
   # seed counts
-  sc <- rnegbin(N, mu = R_n/theta, theta = phi_sc)
+  sc <- rnegbin(N, mu = R_n/(theta/100), theta = phi_sc)
 
 stanData <- list(
   N = N,
@@ -263,7 +263,7 @@ curve(dlnorm(x, 1, 0.5),
       add = TRUE,
       col = "blue",
       lwd = 2)
-abline(v = 0.04, col = "red", lwd = 2)
+abline(v = 4, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['beta_growth2']], 50, display_name = "beta_growth2", flim=c(1.5,3.5))
 curve(dlnorm(x, 1, 0.5),
@@ -276,7 +276,7 @@ curve(dnorm(x, 0, 1),
       col = "blue",
       lwd = 2,
       lty = 2)
-abline(v = 0.01, col = "red", lwd = 2)
+abline(v = 1, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['phi_sc']], 50, display_name = "phi_sc")
 curve(dgamma(x, 2, 0.1),

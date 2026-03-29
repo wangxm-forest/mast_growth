@@ -13,7 +13,7 @@ parameters {
   real<lower=0> C[N];
   real alpha;
   vector[NSite] alpha_site;
-  real<lower=0> beta_dbh;
+  real beta_dbh;
   real beta_GST;
   real<lower=0> sigma_c;
 
@@ -66,7 +66,7 @@ model {
     {
       real G_n = (1 - gamma[n]) * C[n];
 
-      target += lognormal_lpdf(rw[n] | log((pow(G_n / beta_growth1 + pow(DBH[n], beta_growth2),
+      target += lognormal_lpdf(rw[n] | log((pow(G_n / (beta_growth1/100) + pow(DBH[n], beta_growth2),
             1 / beta_growth2)
         - DBH[n]
       ) / 2), sigma_rw);
@@ -77,7 +77,7 @@ model {
       real R_n = gamma[n] * C[n];
       
     target += neg_binomial_2_lpmf(
-      sc[n] | R_n / theta, phi_sc);
+      sc[n] | R_n / (theta/100), phi_sc);
     }
   }
 }
