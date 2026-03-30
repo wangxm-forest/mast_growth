@@ -57,7 +57,7 @@ model {
       C[n] |
       log(alpha
       + alpha_site[site[n]]
-      + beta_dbh * DBH[n]
+      + beta_dbh * (DBH[n]-20)
       + beta_GST * GST[n]),
       sigma_c
     );
