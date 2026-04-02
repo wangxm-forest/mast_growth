@@ -156,7 +156,7 @@ dev.off()
 
 rm(list = ls())
 ###for generative model###
-N <- 10
+N <- 30
 NSite <- 3
 
 DBH <- runif(N, 20, 40)
@@ -221,15 +221,15 @@ names <- c(grep('alpha', names(samples), value = TRUE),
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
-pdf("pairsPlotGene.pdf", height = 9, width = 9)
+pdf("pairsPlotGeneChangePriors.pdf", height = 9, width = 9)
 par(mfrow = c(3,3))
 util$plot_div_pairs(names, names, samples, diagnostics)
 dev.off()
 
-pdf("figures/priorPosteriorPlot.pdf", height = 9, width = 9)
+pdf("figures/priorPosteriorPlotChangeN.pdf", height = 9, width = 9)
 par(mfrow = c(3,3))
 util$plot_expectand_pushforward(samples[['alpha']], 50, display_name = "alpha")
-curve(dlnorm(x, log(90), 0.5),
+curve(dlnorm(x, log(90),0.5),
       add = TRUE,
       col = "blue",
       lwd = 2)
@@ -251,7 +251,7 @@ curve(dnorm(x, 0, 1),
 abline(v = 0.5, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['beta_GST']], 50, display_name = "beta_GST")
-curve(dnorm(x, 0, 5),
+curve(dnorm(x, 0, 1),
       add = TRUE,
       col = "blue",
       lwd = 2,

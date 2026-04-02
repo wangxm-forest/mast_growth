@@ -32,7 +32,7 @@ parameters {
 
 
 model {
-  alpha ~ lognormal(log(90),0.5);
+alpha ~ lognormal(log(90),0.5);
   alpha_site ~ normal(0, 10);
 
   beta_dbh ~ normal(0, 1);
@@ -57,7 +57,7 @@ model {
       C[n] |
       log(alpha
       + alpha_site[site[n]]
-      + beta_dbh * (DBH[n]-20)
+      + beta_dbh * DBH[n]
       + beta_GST * GST[n]),
       sigma_c
     );
