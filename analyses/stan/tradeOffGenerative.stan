@@ -42,8 +42,8 @@ alpha ~ lognormal(log(90),0.5);
 
   gamma ~ normal(0, 1);
 
-  beta_growth1 ~ lognormal(1, 0.5);
-  beta_growth2 ~ lognormal(1, 0.5);
+  beta_growth1 ~ normal(3, 0.01);
+  beta_growth2 ~ normal(3, 0.01);
 
   sigma_rw ~ normal(0, 1);
 

@@ -169,8 +169,8 @@ beta_dbh <- 0.5
 beta_GST <- 0.5
 sigma_c <- 0.1
 #beta_GSP <- 0.3
-beta_growth1 <- 4
-beta_growth2 <- 3.2
+beta_growth1 <- 3
+beta_growth2 <- 3
 gamma <- 0.5
 sigma_rw <- 0.5
 phi_sc <- 2
@@ -226,7 +226,7 @@ par(mfrow = c(3,3))
 util$plot_div_pairs(names, names, samples, diagnostics)
 dev.off()
 
-pdf("figures/priorPosteriorPlotChangeN.pdf", height = 9, width = 9)
+pdf("figures/priorPosteriorPlot.pdf", height = 9, width = 9)
 par(mfrow = c(3,3))
 util$plot_expectand_pushforward(samples[['alpha']], 50, display_name = "alpha")
 curve(dlnorm(x, log(90),0.5),
@@ -259,14 +259,14 @@ curve(dnorm(x, 0, 1),
 abline(v = 0.5, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['beta_growth1']], 50, display_name = "beta_growth1")
-curve(dlnorm(x, 1, 0.5),
+curve(dlnorm(x, 3, 0.01),
       add = TRUE,
       col = "blue",
       lwd = 2)
 abline(v = 4, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['beta_growth2']], 50, display_name = "beta_growth2", flim=c(1.5,3.5))
-curve(dlnorm(x, 1, 0.5),
+curve(dlnorm(x, 3, 0.01),
       add=TRUE, col="blue", lwd=2, lty=2)
 abline(v = 3.2, col = "red", lwd = 2)
 
