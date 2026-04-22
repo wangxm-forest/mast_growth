@@ -42,6 +42,7 @@ alpha ~ lognormal(log(90),0.5);
 
   gamma ~ normal(0, 1);
 
+//putting a very strong priors on allometric parameters
   beta_growth1 ~ normal(3, 0.01);
   beta_growth2 ~ normal(3, 0.01);
 
