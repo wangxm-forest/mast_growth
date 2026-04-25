@@ -171,7 +171,8 @@ sigma_c <- 0.1
 #beta_GSP <- 0.3
 beta_growth1 <- 3
 beta_growth2 <- 3
-gamma <- 0.5
+mu_gamma <- 0.5
+kappa_gamma <- 20
 sigma_rw <- 0.5
 phi_sc <- 2
 theta <- 1
@@ -263,12 +264,12 @@ curve(dlnorm(x, 3, 0.01),
       add = TRUE,
       col = "blue",
       lwd = 2)
-abline(v = 4, col = "red", lwd = 2)
+abline(v = 3, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['beta_growth2']], 50, display_name = "beta_growth2", flim=c(1.5,3.5))
 curve(dlnorm(x, 3, 0.01),
       add=TRUE, col="blue", lwd=2, lty=2)
-abline(v = 3.2, col = "red", lwd = 2)
+abline(v = 3, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['theta']], 50, display_name = "theta")
 curve(dnorm(x, 0, 1),

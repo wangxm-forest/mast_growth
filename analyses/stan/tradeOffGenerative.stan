@@ -18,6 +18,8 @@ parameters {
   real<lower=0> sigma_c;
 
   // allocation
+  real<lower=0, upper=1> mu_gamma; 
+  real<lower=0.1> kappa_gamma;
   vector<lower=0,upper=1>[N] gamma;
   // growth
   real<lower=0> beta_growth1;
@@ -32,7 +34,7 @@ parameters {
 
 
 model {
-alpha ~ lognormal(log(90),0.5);
+alpha ~ lognormal(2,0.5);
   alpha_site ~ normal(0, 10);
 
   beta_dbh ~ normal(0, 1);
@@ -40,7 +42,10 @@ alpha ~ lognormal(log(90),0.5);
 
   sigma_c ~ normal(0, 1);
 
-  gamma ~ normal(0, 1);
+//hierarchical process
+  mu_gamma ~ beta(2, 2); 
+  kappa_gamma ~ exponential(0.1); 
+  gamma ~ beta(mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma);
 
 //putting a very strong priors on allometric parameters
   beta_growth1 ~ normal(3, 0.01);
