@@ -6,25 +6,29 @@ data {
   real<lower=0> rw[N];
   real<lower=0> DBH[N];
   real GST[N];
+  
+  //Fix growth parameters
+  real<lower=0> beta_growth1;
+  real<lower=0> beta_growth2;
+  real<lower=0> sigma_rw;
 }
 
 parameters {
   // carbon
-  real<lower=0> C[N];
+//  real<lower=0> C[N];
   real alpha;
   vector[NSite] alpha_site;
   real beta_dbh;
   real beta_GST;
-  real<lower=0> sigma_c;
 
   // allocation
   real<lower=0, upper=1> mu_gamma; 
   real<lower=0.1> kappa_gamma;
   vector<lower=0,upper=1>[N] gamma;
   // growth
-  real<lower=0> beta_growth1;
-  real<lower=0> beta_growth2;
-  real<lower=0> sigma_rw;
+//  real<lower=0> beta_growth1;
+//  real<lower=0> beta_growth2;
+//  real<lower=0> sigma_rw;
 
   // reproduction
   real<lower=0> phi_sc;
@@ -32,15 +36,22 @@ parameters {
 
 }
 
+transformed parameters {
+  vector[N] C;
 
+  for (n in 1:N) {
+    C[n] = alpha + alpha_site[site[n]] + beta_dbh * DBH[n]
+           + beta_GST * GST[n];
+  }
+}
 model {
-alpha ~ lognormal(2,0.5);
+  alpha ~ lognormal(2,0.5);
   alpha_site ~ normal(0, 10);
 
   beta_dbh ~ normal(0, 1);
   beta_GST ~ normal(0, 5);
 
-  sigma_c ~ normal(0, 1);
+//  sigma_c ~ normal(0, 1);
 
 //hierarchical process
   mu_gamma ~ beta(2, 2); 
@@ -48,10 +59,10 @@ alpha ~ lognormal(2,0.5);
   gamma ~ beta(mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma);
 
 //putting a very strong priors on allometric parameters
-  beta_growth1 ~ normal(3, 0.01);
-  beta_growth2 ~ normal(3, 0.01);
+//  beta_growth1 ~ normal(3, 0.01);
+//  beta_growth2 ~ normal(3, 0.01);
 
-  sigma_rw ~ normal(0, 1);
+//  sigma_rw ~ normal(0, 1);
 
   phi_sc ~ gamma(2, 0.1);
   theta ~ normal(0, 1);
@@ -59,14 +70,14 @@ alpha ~ lognormal(2,0.5);
   for (n in 1:N) {
 
     // carbon
-    target += lognormal_lpdf(
-      C[n] |
-      log(alpha
-      + alpha_site[site[n]]
-      + beta_dbh * DBH[n]
-      + beta_GST * GST[n]),
-      sigma_c
-    );
+//    target += lognormal_lpdf(
+//      C[n] |
+//      log(alpha
+//      + alpha_site[site[n]]
+//      + beta_dbh * DBH[n]
+//      + beta_GST * GST[n]),
+//      sigma_c
+//    );
 
     // growth
     {

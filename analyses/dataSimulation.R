@@ -167,13 +167,14 @@ alpha <- 50
 alpha_site <- c(0, 20, -10)
 beta_dbh <- 0.5
 beta_GST <- 0.5
-sigma_c <- 0.1
+#sigma_c <- 0.1
 #beta_GSP <- 0.3
 beta_growth1 <- 3
 beta_growth2 <- 3
 mu_gamma <- 0.5
 kappa_gamma <- 20
-sigma_rw <- 0.5
+gamma <- rbeta(1,mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma);
+sigma_rw <- 0.05
 phi_sc <- 2
 theta <- 1
 
@@ -197,7 +198,11 @@ stanData <- list(
   sc = sc,
   rw = rw,
   DBH = DBH,
-  GST = GST
+  GST = GST,
+  beta_growth1 = beta_growth1,
+  beta_growth2 = beta_growth2,
+  sigma_rw = sigma_rw
+  
 )
 
 mod <- stan_model(file='stan/tradeOffGenerative.stan')
@@ -213,8 +218,8 @@ names <- c(grep('alpha', names(samples), value = TRUE),
            grep('alpha_site', names(samples), value = TRUE),
            grep('beta_dbh', names(samples), value = TRUE),
            grep('beta_GST', names(samples), value = TRUE),
-           grep('beta_growth1', names(samples), value = TRUE),
-           grep('beta_growth2', names(samples), value = TRUE),
+           #grep('beta_growth1', names(samples), value = TRUE),
+           #grep('beta_growth2', names(samples), value = TRUE),
            grep('gamma', names(samples), value = TRUE),
            grep('phi', names(samples), value = TRUE),
            grep('sigma', names(samples), value = TRUE),
@@ -230,7 +235,7 @@ dev.off()
 pdf("figures/priorPosteriorPlot.pdf", height = 9, width = 9)
 par(mfrow = c(3,3))
 util$plot_expectand_pushforward(samples[['alpha']], 50, display_name = "alpha")
-curve(dlnorm(x, log(90),0.5),
+curve(dlnorm(x, 2,0.5),
       add = TRUE,
       col = "blue",
       lwd = 2)
