@@ -22,8 +22,6 @@ parameters {
   real beta_GST;
 
   // allocation
-  real<lower=0, upper=1> mu_gamma; 
-  real<lower=0.1> kappa_gamma;
   vector<lower=0,upper=1>[N] gamma;
   // growth
 //  real<lower=0> beta_growth1;
@@ -45,7 +43,7 @@ transformed parameters {
   }
 }
 model {
-  alpha ~ lognormal(2,0.5);
+  alpha ~ lognormal(3,0.5);
   alpha_site ~ normal(0, 10);
 
   beta_dbh ~ normal(0, 1);
@@ -53,10 +51,7 @@ model {
 
 //  sigma_c ~ normal(0, 1);
 
-//hierarchical process
-  mu_gamma ~ beta(2, 2); 
-  kappa_gamma ~ exponential(0.1); 
-  gamma ~ beta(mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma);
+  gamma ~ normal(0, 1);
 
 //putting a very strong priors on allometric parameters
 //  beta_growth1 ~ normal(3, 0.01);

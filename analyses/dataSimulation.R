@@ -171,15 +171,13 @@ beta_GST <- 0.5
 #beta_GSP <- 0.3
 beta_growth1 <- 3
 beta_growth2 <- 3
-mu_gamma <- 0.5
-kappa_gamma <- 20
-gamma <- rbeta(1,mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma);
+gamma <- 0.5
 sigma_rw <- 0.05
 phi_sc <- 2
 theta <- 1
 
 
-  Carb <- rlnorm(N, meanlog = log(alpha + alpha_site[site] + beta_dbh * DBH + beta_GST * GST), sdlog = sigma_c)
+  Carb <- alpha + alpha_site[site] + beta_dbh * DBH + beta_GST * GST
   
   # carbon allocation
   G_n <- (1-gamma) * Carb
@@ -232,10 +230,10 @@ par(mfrow = c(3,3))
 util$plot_div_pairs(names, names, samples, diagnostics)
 dev.off()
 
-pdf("figures/priorPosteriorPlot.pdf", height = 9, width = 9)
+pdf("figures/priorPosteriorPlotAssignedChangePior.pdf", height = 9, width = 9)
 par(mfrow = c(3,3))
 util$plot_expectand_pushforward(samples[['alpha']], 50, display_name = "alpha")
-curve(dlnorm(x, 2,0.5),
+curve(dlnorm(x, 3,0.5),
       add = TRUE,
       col = "blue",
       lwd = 2)
