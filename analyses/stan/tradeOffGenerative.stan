@@ -1,32 +1,34 @@
 data {
   int<lower=1> N;
-  int<lower=1> NSite;
-  int<lower=1, upper=NSite> site[N];
+  //int<lower=1> NSite;
+  //int<lower=1, upper=NSite> site[N];
   int<lower=0> sc[N]; 
   real<lower=0> rw[N];
   real<lower=0> DBH[N];
   real GST[N];
   
   //Fix growth parameters
-  real<lower=0> beta_growth1;
-  real<lower=0> beta_growth2;
-  real<lower=0> sigma_rw;
+  //real<lower=0> beta_growth1;
+  //real<lower=0> beta_growth2;
+  
 }
 
 parameters {
   // carbon
-//  real<lower=0> C[N];
+  // real<lower=0> C[N];
   real alpha;
-  vector[NSite] alpha_site;
+  // vector[NSite] alpha_site;
   real beta_dbh;
   real beta_GST;
 
   // allocation
+  real<lower=0, upper=1> mu_gamma; 
+  real<lower=0.1> kappa_gamma;
   vector<lower=0,upper=1>[N] gamma;
   // growth
-//  real<lower=0> beta_growth1;
-//  real<lower=0> beta_growth2;
-//  real<lower=0> sigma_rw;
+  real<lower=0> beta_growth1;
+  real<lower=0> beta_growth2;
+  real<lower=0> sigma_rw;
 
   // reproduction
   real<lower=0> phi_sc;
@@ -37,27 +39,33 @@ parameters {
 transformed parameters {
   vector[N] C;
 
+  //for (n in 1:N) {
+   // C[n] = alpha + alpha_site[site[n]] + beta_dbh * DBH[n]
+         //  + beta_GST * GST[n];
+           
   for (n in 1:N) {
-    C[n] = alpha + alpha_site[site[n]] + beta_dbh * DBH[n]
+    C[n] = alpha + beta_dbh * DBH[n]
            + beta_GST * GST[n];
   }
 }
 model {
   alpha ~ lognormal(3,0.5);
-  alpha_site ~ normal(0, 10);
+  //alpha_site ~ normal(0, 10);
 
   beta_dbh ~ normal(0, 1);
   beta_GST ~ normal(0, 5);
 
 //  sigma_c ~ normal(0, 1);
 
-  gamma ~ normal(0, 1);
+  mu_gamma ~ beta(2, 2); 
+  kappa_gamma ~ exponential(0.1); 
+  gamma ~ beta(mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma);
 
 //putting a very strong priors on allometric parameters
-//  beta_growth1 ~ normal(3, 0.01);
-//  beta_growth2 ~ normal(3, 0.01);
+  beta_growth1 ~ normal(3, 0.01);
+  beta_growth2 ~ normal(3, 0.01);
 
-//  sigma_rw ~ normal(0, 1);
+  sigma_rw ~ normal(0, 1);
 
   phi_sc ~ gamma(2, 0.1);
   theta ~ normal(0, 1);
