@@ -1,0 +1,16 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{‘A Fine Balance’: Exploring the Interplay of Reproductive
+Strategies and Growth Dynamics in Trees}
+\author{Xiaomao Wang}
+\date{}
+
+\begin{document}
+\maketitle
+Masting is the phenomenon of synchronized and highly variable seed production within plant populations, it is closely related to ecosystem-level functions that influence not only plants regeneration but also seed predators populations. There are many hypotheses trying to explain the mechanisms behind masting, many of which focus on the interaction between environmental cues and internal resource dynamics. Carbon is the most critical resource for all plant life processes, but it is usually limited in nature. While trade-offs between vegetative growth and reproduction are fundamental to tree life-history theory, they are often obscured by environmental stochasticity and the inherently unobservable nature of internal carbon pools. Here we present a hierarchical Bayesian generative model, implemented in Stan, that explicitly treats annual carbon allocation as a latent process. We propose an unobserved total carbon pool which is partitioned into two separate pools for growth and reproduction. By coupling two distinct data: annual tree-ring widths as a proxy for growth and annual seed production records as a proxy for reproduction, the model reconstructs hidden resource pools from observed ecological data. This modeling approach presents several significant challenges. First, because the allocation fraction and the total resource pool are mathematically coupled, the model creates parameter identifiability issue. Second, linking the latent allocation parameter to specific masting years is heavily constrained by the informativeness of the available ecological data. We discuss our computational strategy to address these issues, including the use of hierarchical structures to pool information across individuals and the application of biologically informed priors to regularize latent state transitions. Preliminary exploration suggests that incorporating domain-specific expertise into the prior structure is important for resolving the complex ecological processes in noisy context. This work highlights the utility of Stan in deciphering unobservable physiological processes from observable ecological data.
+\end{document}
