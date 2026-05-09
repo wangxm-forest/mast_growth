@@ -7,6 +7,8 @@ data {
   real<lower=0> DBH[N];
   real GST[N];
   
+  //Fix intercept for total carbon
+  real<lower=0> alpha;
   //Fix growth parameters
   //real<lower=0> beta_growth1;
   //real<lower=0> beta_growth2;
@@ -16,7 +18,7 @@ data {
 parameters {
   // carbon
   // real<lower=0> C[N];
-  real alpha;
+  // real alpha;
   // vector[NSite] alpha_site;
   real beta_dbh;
   real beta_GST;
@@ -49,7 +51,7 @@ transformed parameters {
   }
 }
 model {
-  alpha ~ lognormal(3,0.5);
+  //alpha ~ lognormal(3,0.5);
   //alpha_site ~ normal(0, 10);
 
   beta_dbh ~ normal(0, 1);
@@ -62,8 +64,8 @@ model {
   gamma ~ beta(mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma);
 
 //putting a very strong priors on allometric parameters
-  beta_growth1 ~ normal(3, 0.01);
-  beta_growth2 ~ normal(3, 0.01);
+  beta_growth1 ~ normal(3, 0.5);
+  beta_growth2 ~ normal(3, 0.5);
 
   sigma_rw ~ normal(0, 1);
 

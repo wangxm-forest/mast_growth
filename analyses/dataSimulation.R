@@ -156,7 +156,7 @@ dev.off()
 
 rm(list = ls())
 ###for generative model###
-N <- 100
+N <- 1000
 #NSite <- 3
 
 DBH <- runif(N, 20, 40)
@@ -193,6 +193,7 @@ theta <- 1
 
 stanData <- list(
   N = N,
+  alpha = alpha,
 #  NSite = NSite,
 #  site = site,
   sc = sc,
