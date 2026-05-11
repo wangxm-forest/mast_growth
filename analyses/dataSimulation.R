@@ -157,6 +157,7 @@ dev.off()
 rm(list = ls())
 ###for generative model###
 N <- 1000
+mast <- rbinom(N, 1, 0.5)
 #NSite <- 3
 
 DBH <- runif(N, 20, 40)
@@ -171,10 +172,14 @@ beta_GST <- 0.5
 #beta_GSP <- 0.3
 beta_growth1 <- 3
 beta_growth2 <- 3
-mu_gamma <- 0.5
-kappa_gamma <- 50
-gamma <- rbeta(1,mu_gamma * kappa_gamma, (1 - mu_gamma) * kappa_gamma)
-sigma_rw <- 0.05
+#mu_gamma <- 0.5
+#kappa_gamma <- 50
+gamma_mast <- 0.8
+gamma_nonmast <- 0.2
+gamma <- ifelse(mast == 1,
+                gamma_mast,
+                gamma_nonmast)
+sigma_rw <- 0.1
 phi_sc <- 2
 theta <- 1
 
@@ -193,15 +198,16 @@ theta <- 1
 
 stanData <- list(
   N = N,
+  mast = mast,
   alpha = alpha,
 #  NSite = NSite,
 #  site = site,
   sc = sc,
   rw = rw,
   DBH = DBH,
-  GST = GST
-  #beta_growth1 = beta_growth1,
-  #beta_growth2 = beta_growth2
+  GST = GST,
+  beta_growth1 = beta_growth1,
+  beta_growth2 = beta_growth2
 )
 
 mod <- stan_model(file='stan/tradeOffGenerative.stan')
@@ -235,13 +241,13 @@ dev.off()
 
 pdf("figures/priorPosteriorPlot.pdf", height = 9, width = 9)
 par(mfrow = c(3,3))
-util$plot_expectand_pushforward(samples[['alpha']], 50, display_name = "alpha",flim = c(10,55))
-curve(dlnorm(x, 3,0.5),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      xlim = c(10,55))
-abline(v = 30, col = "red", lwd = 2)
+#util$plot_expectand_pushforward(samples[['alpha']], 50, display_name = "alpha",flim = c(10,55))
+#curve(dlnorm(x, 3,0.5),
+#      add = TRUE,
+#      col = "blue",
+#      lwd = 2,
+#      xlim = c(10,55))
+#abline(v = 30, col = "red", lwd = 2)
 
 #util$plot_expectand_pushforward(samples[['alpha_site[1]']], 50, display_name = "alpha_site[1]")
 #curve(dnorm(x, 0, 10),
@@ -266,17 +272,17 @@ curve(dnorm(x, 0, 1),
       lty = 2)
 abline(v = 0.5, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['beta_growth1']], 50, display_name = "beta_growth1")
-curve(dlnorm(x, 3, 0.01),
-      add = TRUE,
-      col = "blue",
-      lwd = 2)
-abline(v = 3, col = "red", lwd = 2)
+#util$plot_expectand_pushforward(samples[['beta_growth1']], 50, display_name = "beta_growth1")
+#curve(dlnorm(x, 3, 0.01),
+#      add = TRUE,
+#      col = "blue",
+#      lwd = 2)
+#abline(v = 3, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['beta_growth2']], 50, display_name = "beta_growth2", flim=c(1.5,3.5))
-curve(dlnorm(x, 3, 0.01),
-      add=TRUE, col="blue", lwd=2, lty=2)
-abline(v = 3, col = "red", lwd = 2)
+#util$plot_expectand_pushforward(samples[['beta_growth2']], 50, display_name = "beta_growth2", flim=c(1.5,3.5))
+#curve(dlnorm(x, 3, 0.01),
+#      add=TRUE, col="blue", lwd=2, lty=2)
+#abline(v = 3, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['theta']], 50, display_name = "theta")
 curve(dnorm(x, 0, 1),
@@ -300,7 +306,7 @@ curve(dnorm(x, 0, 1),
       col = "blue",
       lwd = 2,
       lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
+abline(v = 0.1, col = "red", lwd = 2)
 
 #util$plot_expectand_pushforward(samples[['sigma_c']], 50, display_name = "sigma_c")
 #curve(dnorm(x, 0, 1),
@@ -310,62 +316,38 @@ abline(v = 0.5, col = "red", lwd = 2)
 #      lty = 2)
 #abline(v = 0.1, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['mu_gamma']], 50, display_name = "mu_gamma",flim = c(0.25,0.55))
-curve(dbeta(x, 2, 2),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
+#util$plot_expectand_pushforward(samples[['mu_gamma']], 50, display_name = "mu_gamma",flim = c(0.25,0.55))
+#curve(dbeta(x, 2, 2),
+#      add = TRUE,
+#      col = "blue",
+#      lwd = 2,
+#      lty = 2)
+#abline(v = 0.5, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['kappa_gamma']], 50, display_name = "kappa_gamma", flim = c(10,100))
-curve(dexp(x, 0.1),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      lty = 2)
-abline(v = 20, col = "red", lwd = 2)
+#util$plot_expectand_pushforward(samples[['kappa_gamma']], 50, display_name = "kappa_gamma", flim = c(10,100))
+#curve(dexp(x, 0.1),
+#      add = TRUE,
+#      col = "blue",
+#      lwd = 2,
+#      lty = 2)
+#abline(v = 20, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['gamma[1]']], 50, display_name = "gamma[1]",flim = c(0,1))
+util$plot_expectand_pushforward(samples[['gamma_mast']], 50, display_name = "gamma_mast",flim = c(0,1))
 curve(dnorm(x, 0, 1),
       add = TRUE,
       col = "blue",
       lwd = 2,
       lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
+abline(v = 0.8, col = "red", lwd = 2)
 
-util$plot_expectand_pushforward(samples[['gamma[2]']], 50, display_name = "gamma[2]",flim = c(0,1))
+util$plot_expectand_pushforward(samples[['gamma_nonmast']], 50, display_name = "gamma_nonmast",flim = c(0,1))
 curve(dnorm(x, 0, 1),
       add = TRUE,
       col = "blue",
       lwd = 2,
       lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
+abline(v = 0.2, col = "red", lwd = 2)
 
-
-util$plot_expectand_pushforward(samples[['gamma[3]']], 50, display_name = "gamma[3]",flim = c(0,1))
-curve(dnorm(x, 0, 1),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
-
-util$plot_expectand_pushforward(samples[['gamma[4]']], 50, display_name = "gamma[4]",flim = c(0,1))
-curve(dnorm(x, 0, 1),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
-
-util$plot_expectand_pushforward(samples[['gamma[5]']], 50, display_name = "gamma[5]",flim = c(0,1))
-curve(dnorm(x, 0, 1),
-      add = TRUE,
-      col = "blue",
-      lwd = 2,
-      lty = 2)
-abline(v = 0.5, col = "red", lwd = 2)
 
 
 dev.off()
