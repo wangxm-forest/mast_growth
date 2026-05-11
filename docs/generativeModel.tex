@@ -1,0 +1,171 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb, bm}
+
+\begin{document}
+
+\title{Generative Model with Two Gamma}
+\author{}
+\date{}
+\maketitle
+
+\section*{Data}
+
+For observations $n = 1, \dots, N$:
+
+\begin{itemize}
+    \item $mast_n \in \{0,1\}$ : masting indicator
+    \item $sc_n \in \mathbb{N}_0$ : seed count
+    \item $rw_n \ge 0$ : radial growth
+    \item $DBH_n \ge 0$ : DBH
+    \item $GST_n \in \mathbb{R}$ : growing season temperature
+\end{itemize}
+
+Fixed parameters:
+
+\begin{itemize}
+    \item $\alpha > 0$ : intercept for total carbon
+    \item $\beta_{\text{growth1}} > 0$
+    \item $\beta_{\text{growth2}} > 0$
+\end{itemize}
+
+\section*{Parameters}
+
+\subsection*{Carbon Allocation}
+
+\[
+\beta_{\text{dbh}} \in \mathbb{R}
+\]
+
+\[
+\beta_{\text{GST}} \in \mathbb{R}
+\]
+
+\[
+\gamma_{\text{mast}} \in (0,1)
+\]
+
+\[
+\gamma_{\text{nonmast}} \in (0,1)
+\]
+
+\subsection*{Growth}
+
+\[
+\sigma_{rw} > 0
+\]
+
+\subsection*{Reproduction}
+
+\[
+\phi_{sc} > 0
+\]
+
+\[
+\theta > 0
+\]
+
+\section*{Transformed Parameters}
+
+Total carbon for each observation:
+
+\[
+C_n = \alpha
++ \beta_{\text{dbh}} \cdot DBH_n
++ \beta_{\text{GST}} \cdot GST_n
+\]
+
+\section*{Prior Distributions}
+
+\[
+\beta_{\text{dbh}} \sim \mathcal{N}(0,1)
+\]
+
+\[
+\beta_{\text{GST}} \sim \mathcal{N}(0,1)
+\]
+
+\[
+\gamma_{\text{mast}} \sim \text{Beta}(2,2)
+\]
+
+\[
+\gamma_{\text{nonmast}} \sim \text{Beta}(2,2)
+\]
+
+\[
+\sigma_{rw} \sim \mathcal{N}^{+}(0,1)
+\]
+
+\[
+\phi_{sc} \sim \text{Gamma}(2,0.1)
+\]
+
+\[
+\theta \sim \mathcal{N}^{+}(0,1)
+\]
+
+\section*{Model}
+
+For each observation $n$:
+
+\[
+\gamma_n =
+\begin{cases}
+\gamma_{\text{mast}}, & \text{if } mast_n = 1 \\
+\gamma_{\text{nonmast}}, & \text{if } mast_n = 0
+\end{cases}
+\]
+
+\subsection*{Growth Component}
+
+Carbon allocated to growth:
+
+\[
+G_n = (1 - \gamma_n) C_n
+\]
+
+Expected radial growth:
+
+\[
+\mu_{rw,n} =
+\frac{
+\left(
+\frac{G_n}{\beta_{\text{growth1}}/100}
++
+DBH_n^{\beta_{\text{growth2}}}
+\right)^{1/\beta_{\text{growth2}}}
+- DBH_n
+}{2}
+\]
+
+Observation model:
+
+\[
+rw_n \sim \text{LogNormal}
+\left(
+\log(\mu_{rw,n}),
+\sigma_{rw}
+\right)
+\]
+
+\subsection*{Reproduction Component}
+
+Carbon allocated to reproduction:
+
+\[
+R_n = \gamma_n C_n
+\]
+
+Seed count model:
+
+\[
+sc_n \sim
+\text{NegBinomial}_2
+\left(
+\frac{R_n}{\theta/100},
+\phi_{sc}
+\right)
+\]
+
+\end{document}
