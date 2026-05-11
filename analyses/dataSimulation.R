@@ -333,7 +333,7 @@ abline(v = 0.1, col = "red", lwd = 2)
 #abline(v = 20, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['gamma_mast']], 50, display_name = "gamma_mast",flim = c(0,1))
-curve(dnorm(x, 0, 1),
+curve(dbeta(x, 2, 2),
       add = TRUE,
       col = "blue",
       lwd = 2,
@@ -341,7 +341,7 @@ curve(dnorm(x, 0, 1),
 abline(v = 0.8, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['gamma_nonmast']], 50, display_name = "gamma_nonmast",flim = c(0,1))
-curve(dnorm(x, 0, 1),
+curve(dbeta(x, 2, 2),
       add = TRUE,
       col = "blue",
       lwd = 2,
