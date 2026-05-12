@@ -31,7 +31,7 @@ Fixed parameters:
 
 \section*{Parameters}
 
-\subsection*{Carbon Allocation}
+\subsection*{Total carbon}
 
 \[
 \beta_{\text{dbh}} \in \mathbb{R}
@@ -41,6 +41,8 @@ Fixed parameters:
 \beta_{\text{GST}} \in \mathbb{R}
 \]
 
+\subsection*{Allocation}
+
 \[
 \gamma_{\text{mast}} \in (0,1)
 \]
@@ -49,13 +51,13 @@ Fixed parameters:
 \gamma_{\text{nonmast}} \in (0,1)
 \]
 
-\subsection*{Growth}
+\subsection*{Growth allocation}
 
 \[
 \sigma_{rw} > 0
 \]
 
-\subsection*{Reproduction}
+\subsection*{Reproduction allocation}
 
 \[
 \phi_{sc} > 0
@@ -70,9 +72,7 @@ Fixed parameters:
 Total carbon for each observation:
 
 \[
-C_n = \alpha
-+ \beta_{\text{dbh}} \cdot DBH_n
-+ \beta_{\text{GST}} \cdot GST_n
+C_n = \alpha + \beta_{\text{dbh}} \cdot DBH_n + \beta_{\text{GST}} \cdot GST_n
 \]
 
 \section*{Prior Distributions}
@@ -131,21 +131,15 @@ Expected radial growth:
 \mu_{rw,n} =
 \frac{
 \left(
-\frac{G_n}{\beta_{\text{growth1}}/100}
-+
-DBH_n^{\beta_{\text{growth2}}}
-\right)^{1/\beta_{\text{growth2}}}
-- DBH_n
-}{2}
+\frac{G_n}{\beta_{\text{growth1}}/100} + DBH_n^{\beta_{\text{growth2}}}\right)^{1/\beta_{\text{growth2}}} - DBH_n}{2}
 \]
 
-Observation model:
+Observation:
 
 \[
 rw_n \sim \text{LogNormal}
 \left(
-\log(\mu_{rw,n}),
-\sigma_{rw}
+\log(\mu_{rw,n}), \sigma_{rw}
 \right)
 \]
 
@@ -157,14 +151,18 @@ Carbon allocated to reproduction:
 R_n = \gamma_n C_n
 \]
 
-Seed count model:
+Expected seed count:
+\[
+\mu_{sc,n} =\frac{R_n}{\theta/100}
+\]
+
+Observation:
 
 \[
 sc_n \sim
-\text{NegBinomial}_2
+\text{NegBinomial}
 \left(
-\frac{R_n}{\theta/100},
-\phi_{sc}
+\mu_{sc,n}, \phi_{sc}
 \right)
 \]
 
