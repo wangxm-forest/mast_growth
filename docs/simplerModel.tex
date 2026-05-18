@@ -1,0 +1,85 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb, bm}
+
+\begin{document}
+
+\title{Simpler Model Link Seed and Growth Directly}
+\author{}
+\date{}
+\maketitle
+
+\section*{Data}
+
+For observations $n = 1, \dots, N$:
+
+\begin{itemize}
+    \item $sc_n \in \mathbb{N}_0$ : seed count
+    \item $rw_n \ge 0$ : radial growth
+    \item $DBH_n \ge 0$ : DBH
+    \item $GST_n \in \mathbb{R}$ : growing season temperature
+\end{itemize}
+
+
+\section*{Parameters}
+
+\[
+\alpha \in \mathbb{R}
+\]
+
+\[
+\beta_{\text{rw}} \in \mathbb{R}
+\]
+
+\[
+\beta_{\text{dbh}} \in \mathbb{R}
+\]
+
+\[
+\beta_{\text{GST}} \in \mathbb{R}
+\]
+
+\section*{Prior Distributions}
+\[
+\alpha \sim \mathcal{N}(0,5)
+\]
+
+\[
+\beta_{\text{rw}} \sim \mathcal{N}(0,5)
+\]
+
+\[
+\beta_{\text{dbh}} \sim \mathcal{N}(0,5)
+\]
+
+\[
+\beta_{\text{GST}} \sim \mathcal{N}(0,5)
+\]
+
+\[
+\phi_{sc} \sim \text{Gamma}(2,0.1)
+\]
+
+\section*{Model}
+
+For each observation $n$:
+
+
+
+Expected seed count:
+
+\[
+\log(\mu_{sc,n}) =\alpha + \beta_{rw}  \cdot rw_n + \beta_{dbh}  \cdot DBH_n + \beta_{GST}  \cdot GST_n
+\]
+
+Observation:
+
+\[
+sc_n \sim
+\text{NegBinomial}
+\left(
+\log(\mu_{sc,n}), \phi_{sc}
+\right)
+\]
+
+\end{document}
