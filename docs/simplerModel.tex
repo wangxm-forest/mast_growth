@@ -11,41 +11,50 @@
 
 \section*{Data}
 
-For observations $n = 1, \dots, N$:
+We now have a time-series across individuals $i = 1 \dots, I$ in year $t = 1, \dots, T$:
 
 \begin{itemize}
-    \item $sc_n \in \mathbb{N}_0$ : seed count
-    \item $rw_n \ge 0$ : radial growth
-    \item $DBH_n \ge 0$ : DBH
-    \item $GST_n \in \mathbb{R}$ : growing season temperature
+    \item $sc_{i,t} \in \mathbb{N}$ : seed count of tree $i$ in year $t$
+    \item $\text{BAI}_{i,t} \ge 0$ : basal area increment of tree $i$ in year $t$
+    \item $\text{DBH}_{i,t} \ge 0$ : DBH of tree $i$ in year $t$
+    \item $\text{GST}_{t} \in \mathbb{R}$ : growing season temperature in year $t$
 \end{itemize}
 
 
 \section*{Parameters}
 
-\[
-\alpha \in \mathbb{R}
-\]
+\subsection*{Growth parameters}
+\begin{itemize}
+    \item $\alpha_{\text{BAI}} \in \mathbb{R}$ : intercept for growth
+    \item $\beta_{\text{GST1}} \in \mathbb{R}$ : effect of climate on growth
+    \item $\sigma_{\text{BAI}} > 0$ : standard deviation for growth
+\end{itemize}
 
-\[
-\beta_{\text{rw}} \in \mathbb{R}
-\]
-
-\[
-\beta_{\text{dbh}} \in \mathbb{R}
-\]
-
-\[
-\beta_{\text{GST}} \in \mathbb{R}
-\]
+\subsection*{Reproduction parameters}
+\begin{itemize}
+    \item $\alpha_{\text{sc}} \in \mathbb{R}$ : intercept for seeds
+    \item $\beta_{\text{dbh}} \in \mathbb{R}$ : effect of tree size on seeds
+    \item $\beta_{\text{GSt2}} \in \mathbb{R}$ : effect of climate on seeds
+    \item $\gamma_{\text{current}} \in \mathbb{R}$ : current year's growth effect on seeds
+    \item $\gamma_{\text{lag}} \in \mathbb{R}$ : lag effect, last year's growth effect on seeds
+    \item $\phi_{\text{sc}} > 0$ : dispersion parameter
+\end{itemize}
 
 \section*{Prior Distributions}
 \[
-\alpha \sim \mathcal{N}(0,5)
+\alpha_{\text{BAI}} \sim \mathcal{N}(0,5)
 \]
 
 \[
-\beta_{\text{rw}} \sim \mathcal{N}(0,5)
+\beta_{\text{GST1}} \sim \mathcal{N}(0,5)
+\]
+
+\[
+\sigma_{\text{BAI}} \sim \mathcal{N}(0,1)
+\]
+
+\[
+\alpha_{\text{sc}} \sim \mathcal{N}(0,5)
 \]
 
 \[
@@ -53,33 +62,43 @@ For observations $n = 1, \dots, N$:
 \]
 
 \[
-\beta_{\text{GST}} \sim \mathcal{N}(0,5)
+\beta_{\text{GST2}} \sim \mathcal{N}(0,5)
 \]
 
 \[
 \phi_{sc} \sim \text{Gamma}(2,0.1)
 \]
 
-\section*{Model}
-
-For each observation $n$:
-
-
-
-Expected seed count:
-
 \[
-\log(\mu_{sc,n}) =\alpha + \beta_{rw}  \cdot rw_n + \beta_{dbh}  \cdot DBH_n + \beta_{GST}  \cdot GST_n
+\gamma_{\text{current}} \sim \mathcal{N}(0,5)
 \]
 
-Observation:
-
 \[
-sc_n \sim
-\text{NegBinomial}
-\left(
-\log(\mu_{sc,n}), \phi_{sc}
-\right)
+\gamma_{\text{lag}} \sim \mathcal{N}(0,5)
+\]
+
+\section*{Model}
+
+For each individual tree $i$ and year $t$:
+
+Expected log-growth for all $t = 1, \dots, T$:
+\[
+G_{i,t} = \alpha_{\text{BAI}} +  \beta_{\text{GST1}} \cdot \text{GST}_{t}
+\]
+
+Observed ($\text{BAI}$):
+\[
+\text{BAI}_{i,t} \sim \text{LogNormal}\left(G_{i,t}, \, \sigma_{\text{BAI}}\right)
+\]
+
+Expected seed count for all $t = 1, \dots, T$:
+\[
+\log(\mu_{\text{sc},i,t}) = \alpha_{\text{sc}} + \beta_{\text{dbh2}} \cdot \text{DBH}_{i,t} + \beta_{\text{GST2}} \cdot \text{GST}_{t} + \gamma_{\text{current}} \cdot G_{i,t} + \gamma_{\text{lag}} \cdot G_{i,t-1}
+\]
+
+Observed seed counts:
+\[
+sc_{i,t} \sim \text{NegBinomial2Log}\left(\log(\mu_{\text{sc},i,t}), \, \phi_{\text{sc}}\right)
 \]
 
 \end{document}
