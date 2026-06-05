@@ -16,3 +16,4 @@ analyses/.Rhistory
 *.out
 *.run.xml
 data/MORA2024
+data/measurement
