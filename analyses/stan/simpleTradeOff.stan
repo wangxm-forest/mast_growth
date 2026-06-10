@@ -44,11 +44,11 @@ model {
   for (i in 1:I) {
 
   G[i, 1] = alpha_BAI + beta_GST2 * GST[1];
-  BAI[i, 1] ~ lognormal(G[i, 1], sigma_BAI);
+  BAI[i, 1] ~ normal(G[i, 1], sigma_BAI);
   
     for (t in 2:T){  
       G[i, t] = alpha_BAI + beta_GST2 * GST[t];
-      BAI[i, t] ~ lognormal(G[i, t], sigma_BAI);
+      BAI[i, t] ~ normal(G[i, t], sigma_BAI);
       
   real log_mu_sc = alpha_sc + beta_GST2 * GST[t] + gamma_current * G[i, t] + gamma_lag * G[i, t-1];
                        
