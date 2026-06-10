@@ -352,3 +352,78 @@ abline(v = 0.2, col = "red", lwd = 2)
 
 dev.off()
 
+###for simple model###
+set.seed(2266)
+I <- 30
+T <- 30
+
+# Simulate predictors
+# Growing season temperature
+GST <- rnorm(T, mean = 15, sd = 1)
+# Define True Parameters
+alpha_BAI <- 5
+beta_GST2 <- 0.3
+sigma_BAI <- 0.2
+
+alpha_sc <- 1
+beta_GST1 <- 0.5
+gamma_current <- -0.4
+gamma_lag <- -0.2
+
+phi_sc <- 3.0
+
+
+G <- matrix(NA, nrow = I, ncol = T)
+BAI <- matrix(NA, nrow = I, ncol = T)
+sc  <- matrix(0,  nrow = I, ncol = T)
+
+for (i in 1:I) {
+  for (t in 1:T) {
+
+    G[i, t] <- alpha_BAI + beta_GST2 * GST[t]
+
+    BAI[i, t] <- rnorm(1, mean = G[i, t], sd = sigma_BAI)
+    
+    if (t > 1) {
+      log_mu_sc <- alpha_sc + 
+        beta_GST1 * GST[t] + 
+        gamma_current * G[i, t] + 
+        gamma_lag * G[i, t-1]
+      
+      sc[i, t] <- rnbinom(1, mu = exp(log_mu_sc), size = phi_sc)
+    } else {
+      
+      log_mu_sc_year1 <- alpha_sc + beta_GST2 * GST[t] + gamma_current * G[i, t]
+      sc[i, 1] <- rnbinom(1, mu = exp(log_mu_sc_year1), size = phi_sc)
+    }
+  }
+}
+
+stanData <- list(
+  I = I,
+  T = T,
+  sc = sc,
+  BAI = BAI,
+  GST = GST
+)
+
+mod <- stan_model(file='stan/simpleTradeOff.stan')
+
+fit <- stan(file='stan/simpleTradeOff.stan', data=stanData, seed=112234, control=list(adapt_delta=0.99))
+diagnostics <- util$extract_hmc_diagnostics(fit)
+
+print(util$check_all_hmc_diagnostics(diagnostics))
+
+samples <- util$extract_expectand_vals(fit)
+names <- c(grep('alpha_BAI', names(samples), value = TRUE),
+           grep('beta_GST2', names(samples), value = TRUE),
+           grep('sigma_BAI', names(samples), value = TRUE),
+           grep('alpha_sc', names(samples), value = TRUE),
+           grep('beta_GST1', names(samples), value = TRUE),
+           grep('gamma_current', names(samples), value = TRUE),
+           grep('gamma_lag', names(samples), value = TRUE),
+           grep('phi_sc', names(samples), value = TRUE))
+
+base_samples <- util$filter_expectands(samples,names)
+print(util$check_all_expectand_diagnostics(base_samples))
+print(fit, pars = names)
