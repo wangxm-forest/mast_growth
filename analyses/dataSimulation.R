@@ -361,40 +361,40 @@ T <- 30
 # Growing season temperature
 GST <- rnorm(T, mean = 15, sd = 1)
 # Define True Parameters
-alpha_BAI <- 5
-beta_GST2 <- 0.3
-sigma_BAI <- 0.2
+alpha_BAI <- 2
+beta_GST2 <- 0.05
+sigma_BAI <- 0.5
 
-alpha_sc <- 1
-beta_GST1 <- 0.5
-gamma_current <- -0.4
-gamma_lag <- -0.2
+alpha_sc <- 0.5
+beta_GST1 <- 0.3
+gamma_current <- -0.2
+gamma_lag <- -0.1
 
-phi_sc <- 3.0
+sigma_sc <- 1
 
 
-G <- matrix(NA, nrow = I, ncol = T)
 BAI <- matrix(NA, nrow = I, ncol = T)
 sc  <- matrix(0,  nrow = I, ncol = T)
 
 for (i in 1:I) {
   for (t in 1:T) {
 
-    G[i, t] <- alpha_BAI + beta_GST2 * GST[t]
+    G_mu <- alpha_BAI + beta_GST2 * (GST[t]-15)
 
-    BAI[i, t] <- rnorm(1, mean = G[i, t], sd = sigma_BAI)
+    BAI[i, t] <- rlnorm(1, meanlog = G_mu, sdlog = sigma_BAI)
     
     if (t > 1) {
       log_mu_sc <- alpha_sc + 
-        beta_GST1 * GST[t] + 
-        gamma_current * G[i, t] + 
-        gamma_lag * G[i, t-1]
+        beta_GST1 * (GST[t]-15) + 
+        gamma_current * log(BAI[i, t]) + 
+        gamma_lag * log(BAI[i, t-1])
       
-      sc[i, t] <- rnbinom(1, mu = exp(log_mu_sc), size = phi_sc)
+      sc[i, t] <- rlnorm(1, meanlog = log_mu_sc, sdlog = sigma_sc)
     } else {
-      
-      log_mu_sc_year1 <- alpha_sc + beta_GST2 * GST[t] + gamma_current * G[i, t]
-      sc[i, 1] <- rnbinom(1, mu = exp(log_mu_sc_year1), size = phi_sc)
+      G_mu_1 <- alpha_BAI + beta_GST2 * (GST[1]-15)
+      BAI[i, 1] <- rlnorm(1, meanlog = G_mu_1, sdlog = sigma_BAI)
+      log_mu_sc_year1 <- alpha_sc + beta_GST1 * (GST[t]-15) + gamma_current * log(BAI[i, 1])
+      sc[i, 1] <- rlnorm(1, meanlog = log_mu_sc_year1, sdlog = sigma_sc)
     }
   }
 }
@@ -422,8 +422,75 @@ names <- c(grep('alpha_BAI', names(samples), value = TRUE),
            grep('beta_GST1', names(samples), value = TRUE),
            grep('gamma_current', names(samples), value = TRUE),
            grep('gamma_lag', names(samples), value = TRUE),
-           grep('phi_sc', names(samples), value = TRUE))
+           grep('sigma_sc', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
 print(fit, pars = names)
+
+pdf("figures/priorPosteriorPlotSimple.pdf", height = 9, width = 9)
+par(mfrow = c(3,3))
+util$plot_expectand_pushforward(samples[['alpha_BAI']], 50, display_name = "alpha_BAI")
+curve(dlnorm(x, 5,2),
+      add = TRUE,
+      col = "blue",
+      lwd = 2)
+abline(v = 2, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['beta_GST2']], 50, display_name = "beta_GST2")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.05, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['sigma_BAI']], 50, display_name = "sigma_BAI")
+curve(dnorm(x, 0, 5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.5, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['alpha_sc']], 50, display_name = "alpha_sc")
+curve(dnorm(x, 0.5, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.5, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['beta_GST1']], 50, display_name = "beta_GST1")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.3, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['gamma_current']], 50, display_name = "gamma_current")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = -0.2, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['gamma_lag']], 50, display_name = "gamma_lag")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = -0.1, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['sigma_sc']], 50, display_name = "sigma_sc")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 1, col = "red", lwd = 2)
+
+dev.off()
