@@ -42,14 +42,15 @@ model {
    real  G_mu_1 = alpha_BAI + beta_GST2 * (GST[1] - 15);
       BAI[i, 1] ~ lognormal(G_mu_1, sigma_BAI);
     
-    real log_mu_sc_1 = alpha_sc + beta_GST1 * (GST[1] - 15) + gamma_current * log(BAI[i, 1]);
+    real log_mu_sc_1 = alpha_sc + beta_GST1 * (GST[1] - 15) + gamma_current * G_mu_1;
     sc[i, 1] ~ lognormal(log_mu_sc_1, sigma_sc);
   
     for (t in 2:T){  
   real G_mu = alpha_BAI + beta_GST2 * (GST[t]-15);
+  real G_mu_lag = alpha_BAI + beta_GST2 * (GST[t-1]-15);
       BAI[i, t] ~ lognormal(G_mu, sigma_BAI);
       
-  real log_mu_sc = alpha_sc + beta_GST1 * (GST[t]-15) + gamma_current * log(BAI[i, t]) + gamma_lag * log(BAI[i, t-1]);
+  real log_mu_sc = alpha_sc + beta_GST1 * (GST[t]-15) + gamma_current * G_mu + gamma_lag * G_mu_lag;
                        
       sc[i, t] ~ lognormal(log_mu_sc, sigma_sc);
 
