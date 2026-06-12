@@ -354,7 +354,7 @@ dev.off()
 
 ###for simple model###
 set.seed(2266)
-I <- 30
+I <- 100
 T <- 30
 
 # Simulate predictors
