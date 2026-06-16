@@ -354,7 +354,7 @@ dev.off()
 
 ###for simple model###
 set.seed(2266)
-I <- 100
+I <- 10
 T <- 30
 
 # Simulate predictors
@@ -371,29 +371,39 @@ gamma_current <- -0.2
 gamma_lag <- -0.1
 
 sigma_sc <- 1
+sigma_G <- 0.5
 
 
 BAI <- matrix(NA, nrow = I, ncol = T)
 sc  <- matrix(0,  nrow = I, ncol = T)
+G <- matrix(NA, nrow = I, ncol =T)
 
 for (i in 1:I) {
   for (t in 1:T) {
 
     G_mu <- alpha_BAI + beta_GST2 * (GST[t]-15)
+    
+    G[i, t] <- rnorm(1, G_mu, sigma_G)
 
-    BAI[i, t] <- rlnorm(1, meanlog = G_mu, sdlog = sigma_BAI)
+    BAI[i, t] <- rlnorm(1, meanlog = G[i, t], sdlog = sigma_BAI)
     
     if (t > 1) {
       log_mu_sc <- alpha_sc + 
         beta_GST1 * (GST[t]-15) + 
-        gamma_current * log(BAI[i, t]) + 
-        gamma_lag * log(BAI[i, t-1])
+        gamma_current * G[i, t] + 
+        gamma_lag * G[i, t-1]
       
       sc[i, t] <- rlnorm(1, meanlog = log_mu_sc, sdlog = sigma_sc)
+      
     } else {
       G_mu_1 <- alpha_BAI + beta_GST2 * (GST[1]-15)
-      BAI[i, 1] <- rlnorm(1, meanlog = G_mu_1, sdlog = sigma_BAI)
+      
+      G[i, 1] <- rnorm(1, G_mu_1, sigma_G)
+      
+      BAI[i, 1] <- rlnorm(1, meanlog = G[i, 1], sdlog = sigma_BAI)
+      
       log_mu_sc_year1 <- alpha_sc + beta_GST1 * (GST[t]-15) + gamma_current * log(BAI[i, 1])
+      
       sc[i, 1] <- rlnorm(1, meanlog = log_mu_sc_year1, sdlog = sigma_sc)
     }
   }
