@@ -354,7 +354,7 @@ dev.off()
 
 ###for simple model###
 set.seed(2266)
-I <- 10
+I <- 100
 T <- 30
 
 # Simulate predictors
@@ -381,7 +381,7 @@ G <- matrix(NA, nrow = I, ncol =T)
 for (i in 1:I) {
   for (t in 1:T) {
 
-    G_mu <- alpha_BAI + beta_GST2 * (GST[t]-15)
+    G_mu <- alpha_BAI
     
     G[i, t] <- rnorm(1, G_mu, sigma_G)
 
@@ -389,20 +389,19 @@ for (i in 1:I) {
     
     if (t > 1) {
       log_mu_sc <- alpha_sc + 
-        beta_GST1 * (GST[t]-15) + 
         gamma_current * G[i, t] + 
         gamma_lag * G[i, t-1]
       
       sc[i, t] <- rlnorm(1, meanlog = log_mu_sc, sdlog = sigma_sc)
       
     } else {
-      G_mu_1 <- alpha_BAI + beta_GST2 * (GST[1]-15)
+      G_mu_1 <- alpha_BAI
       
       G[i, 1] <- rnorm(1, G_mu_1, sigma_G)
       
       BAI[i, 1] <- rlnorm(1, meanlog = G[i, 1], sdlog = sigma_BAI)
       
-      log_mu_sc_year1 <- alpha_sc + beta_GST1 * (GST[t]-15) + gamma_current * log(BAI[i, 1])
+      log_mu_sc_year1 <- alpha_sc + gamma_current * G[i, 1]
       
       sc[i, 1] <- rlnorm(1, meanlog = log_mu_sc_year1, sdlog = sigma_sc)
     }
@@ -413,8 +412,7 @@ stanData <- list(
   I = I,
   T = T,
   sc = sc,
-  BAI = BAI,
-  GST = GST
+  BAI = BAI
 )
 
 mod <- stan_model(file='stan/simpleTradeOff.stan')
@@ -426,13 +424,12 @@ print(util$check_all_hmc_diagnostics(diagnostics))
 
 samples <- util$extract_expectand_vals(fit)
 names <- c(grep('alpha_BAI', names(samples), value = TRUE),
-           grep('beta_GST2', names(samples), value = TRUE),
            grep('sigma_BAI', names(samples), value = TRUE),
            grep('alpha_sc', names(samples), value = TRUE),
-           grep('beta_GST1', names(samples), value = TRUE),
            grep('gamma_current', names(samples), value = TRUE),
            grep('gamma_lag', names(samples), value = TRUE),
-           grep('sigma_sc', names(samples), value = TRUE))
+           grep('sigma_sc', names(samples), value = TRUE),
+           grep('sigma_G', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
