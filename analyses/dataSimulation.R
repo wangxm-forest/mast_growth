@@ -371,37 +371,33 @@ gamma_current <- -0.2
 gamma_lag <- -0.1
 
 sigma_sc <- 1
-sigma_G <- 0.5
 
 
 BAI <- matrix(NA, nrow = I, ncol = T)
 sc  <- matrix(0,  nrow = I, ncol = T)
-G <- matrix(NA, nrow = I, ncol =T)
 
 for (i in 1:I) {
   for (t in 1:T) {
 
     G_mu <- alpha_BAI
     
-    G[i, t] <- rnorm(1, G_mu, sigma_G)
+    G_mu_lag <- alpha_BAI
 
-    BAI[i, t] <- rlnorm(1, meanlog = G[i, t], sdlog = sigma_BAI)
+    BAI[i, t] <- rlnorm(1, meanlog = G_mu, sdlog = sigma_BAI)
     
     if (t > 1) {
       log_mu_sc <- alpha_sc + 
-        gamma_current * G[i, t] + 
-        gamma_lag * G[i, t-1]
+        gamma_current * G_mu + 
+        gamma_lag * G_mu_lag
       
       sc[i, t] <- rlnorm(1, meanlog = log_mu_sc, sdlog = sigma_sc)
       
     } else {
       G_mu_1 <- alpha_BAI
+           
+      BAI[i, 1] <- rlnorm(1, meanlog = G_mu_1, sdlog = sigma_BAI)
       
-      G[i, 1] <- rnorm(1, G_mu_1, sigma_G)
-      
-      BAI[i, 1] <- rlnorm(1, meanlog = G[i, 1], sdlog = sigma_BAI)
-      
-      log_mu_sc_year1 <- alpha_sc + gamma_current * G[i, 1]
+      log_mu_sc_year1 <- alpha_sc + gamma_current * G_mu_1
       
       sc[i, 1] <- rlnorm(1, meanlog = log_mu_sc_year1, sdlog = sigma_sc)
     }
@@ -418,6 +414,7 @@ stanData <- list(
 mod <- stan_model(file='stan/simpleTradeOff.stan')
 
 fit <- stan(file='stan/simpleTradeOff.stan', data=stanData, seed=112234, control=list(adapt_delta=0.99))
+
 diagnostics <- util$extract_hmc_diagnostics(fit)
 
 print(util$check_all_hmc_diagnostics(diagnostics))
@@ -434,6 +431,11 @@ names <- c(grep('alpha_BAI', names(samples), value = TRUE),
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
 print(fit, pars = names)
+util$plot_pairs_by_chain(samples[['alpha_sc']], 'alpha_sc',
+                         samples[['gamma_current']], 'gamma_current')
+util$plot_pairs_by_chain(samples[['alpha_sc']]^2, 'alpha_sc^2',
+                         samples[['gamma_current']]^2, 'gamma_current^2')
+
 
 pdf("figures/priorPosteriorPlotSimple.pdf", height = 9, width = 9)
 par(mfrow = c(3,3))

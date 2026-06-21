@@ -19,8 +19,7 @@ parameters {
   real alpha_BAI;
 //  real beta_GST2;
   real<lower=0> sigma_BAI;
-  matrix[I,T] G; 
-  real<lower=0> sigma_G;
+
   
   //trade-off
   real gamma_current;
@@ -40,20 +39,16 @@ model {
   
   gamma_current ~ normal(0, 1);
   gamma_lag ~ normal(0, 1);
-  
-  sigma_G ~ normal(0, 1);
 
   for (i in 1:I) {
 
     real G_mu_1 = alpha_BAI// + beta_GST2 * (GST[1]-15)
     ;
 
-        G[i,1] ~ normal(G_mu_1, sigma_G);
-
-        BAI[i,1] ~ lognormal(G[i,1], sigma_BAI);
+        BAI[i,1] ~ lognormal(G_mu_1, sigma_BAI);
     
     real log_mu_sc_1 = alpha_sc + //beta_GST1 * (GST[1] - 15) 
-    + gamma_current * G[i, 1];
+    + gamma_current * G_mu_1;
     
       sc[i, 1] ~ lognormal(log_mu_sc_1, sigma_sc);
   
@@ -61,13 +56,12 @@ model {
       
     real G_mu = alpha_BAI //+ beta_GST2 * (GST[t]-15)
     ;
+    real G_mu_lag = alpha_BAI;
 
-        G[i,t] ~ normal(G_mu, sigma_G);
-
-        BAI[i,t] ~ lognormal(G[i,t], sigma_BAI);
+        BAI[i,t] ~ lognormal(G_mu, sigma_BAI);
         
     real log_mu_sc = alpha_sc + //beta_GST1 * (GST[t]-15) 
-    + gamma_current * G[i, t] + gamma_lag * G[i, t-1];
+    + gamma_current * G_mu + gamma_lag * G_mu_lag;
                        
       sc[i, t] ~ lognormal(log_mu_sc, sigma_sc);
 
