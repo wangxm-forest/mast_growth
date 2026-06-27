@@ -18,8 +18,11 @@ parameters {
   //growth
   real alpha_BAI;
 //  real beta_GST2;
-  real<lower=0> sigma_BAI;
+  
+   // growth deviations
+  matrix[I,T] G;
 
+  real<lower=0> sigma_BAI;
   
   //trade-off
   real gamma_current;
@@ -31,7 +34,7 @@ parameters {
 model {
   alpha_BAI ~ normal(5, 2);
 //  beta_GST1 ~ normal(0, 1);
-  sigma_BAI ~ normal(0, 5);
+  sigma_BAI ~ normal(0, 1);
   
   alpha_sc ~ normal(0.5, 1);
 //  beta_GST2 ~ normal(0, 1);
@@ -42,26 +45,28 @@ model {
 
   for (i in 1:I) {
 
-    real G_mu_1 = alpha_BAI// + beta_GST2 * (GST[1]-15)
-    ;
+    G[i,1] ~ normal(0, sigma_BAI);
+    
+    real G_mu_1 = alpha_BAI + G[i,1];
 
-        BAI[i,1] ~ lognormal(G_mu_1, sigma_BAI);
+    BAI[i,1] ~ lognormal(G_mu_1, sigma_BAI);
     
     real log_mu_sc_1 = alpha_sc + //beta_GST1 * (GST[1] - 15) 
-    + gamma_current * G_mu_1;
+    + gamma_current * G[i,1];
     
       sc[i, 1] ~ lognormal(log_mu_sc_1, sigma_sc);
   
     for (t in 2:T){
+    G[i,t] ~ normal(0, sigma_BAI);
       
-    real G_mu = alpha_BAI //+ beta_GST2 * (GST[t]-15)
+    real G_mu = alpha_BAI + G[i,t];
     ;
-    real G_mu_lag = alpha_BAI;
+    real G_mu_lag =  alpha_BAI + G[i,t-1];
 
         BAI[i,t] ~ lognormal(G_mu, sigma_BAI);
         
     real log_mu_sc = alpha_sc + //beta_GST1 * (GST[t]-15) 
-    + gamma_current * G_mu + gamma_lag * G_mu_lag;
+    + gamma_current * G[i,t] + gamma_lag * G[i,t-1];
                        
       sc[i, t] ~ lognormal(log_mu_sc, sigma_sc);
 
