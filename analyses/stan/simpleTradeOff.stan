@@ -21,7 +21,7 @@ parameters {
   
    // growth deviations
   matrix[I,T] G;
-
+  real<lower=0> sigma_G;
   real<lower=0> sigma_BAI;
   
   //trade-off
@@ -32,20 +32,21 @@ parameters {
 }
 
 model {
-  alpha_BAI ~ normal(5, 2);
+  alpha_BAI ~ normal(2, 5);
 //  beta_GST1 ~ normal(0, 1);
-  sigma_BAI ~ normal(0, 1);
+  sigma_BAI ~ normal(0, 0.5);
+  sigma_G ~ normal (0,0.5);
   
-  alpha_sc ~ normal(0.5, 1);
+  alpha_sc ~ normal(0, 1);
 //  beta_GST2 ~ normal(0, 1);
   sigma_sc ~ normal(0, 1);
   
-  gamma_current ~ normal(0, 1);
-  gamma_lag ~ normal(0, 1);
+  gamma_current ~ normal(0, 5);
+  gamma_lag ~ normal(0, 5);
 
   for (i in 1:I) {
 
-    G[i,1] ~ normal(0, sigma_BAI);
+    G[i,1] ~ normal(0, sigma_G);
     
     real G_mu_1 = alpha_BAI + G[i,1];
 
@@ -57,7 +58,7 @@ model {
       sc[i, 1] ~ lognormal(log_mu_sc_1, sigma_sc);
   
     for (t in 2:T){
-    G[i,t] ~ normal(0, sigma_BAI);
+    G[i,t] ~ normal(0, sigma_G);
       
     real G_mu = alpha_BAI + G[i,t];
     ;

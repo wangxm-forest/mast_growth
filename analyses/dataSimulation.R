@@ -354,7 +354,7 @@ dev.off()
 
 ###for simple model###
 set.seed(2266)
-I <- 50
+I <- 100
 T <- 30
 
 # Simulate predictors
@@ -363,16 +363,17 @@ T <- 30
 # Define True Parameters
 alpha_BAI <- 2
 #beta_GST2 <- 0.05
-sigma_BAI <- 0.5
+sigma_BAI <- 0.1
+sigma_G <- 0.2
 
-alpha_sc <- 0.5
+alpha_sc <- 0
 #beta_GST1 <- 0.3
-gamma_current <- -0.2
-gamma_lag <- -0.1
+gamma_current <- -4
+gamma_lag <- -1
 
 sigma_sc <- 1
 
-G <- matrix(rnorm(I*T, 0, sigma_BAI), I, T)
+G <- matrix(rnorm(I*T, 0, sigma_G), I, T)
 BAI <- matrix(NA, nrow = I, ncol = T)
 sc  <- matrix(0,  nrow = I, ncol = T)
 
