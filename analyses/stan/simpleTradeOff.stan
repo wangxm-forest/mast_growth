@@ -2,77 +2,67 @@
 # started by Mao, a simpler trade-off model linking seed and growth directly, the seed production is directly linked to tree size, growth, and climate variables.
 
 data {
-  int<lower=1> I;
-  int<lower=2> T;
-  real<lower=0> sc[I,T]; 
-  real<lower=0> BAI[I,T];
-//  vector[T] GST;
+  int<lower=1> N;
+  vector[N] BAI;
+  vector[N] BAI_lag; 
+  int<lower=1> year[N];
+  int<lower=1> N_years;
+  
+  int<lower=1> N_t;
+  int<lower=0> sc[N_t];
+  int<lower=0> sc_lag[N_t];
+  int<lower=1> year_t[N_t];
+  int<lower=1> year_t_lag[N_t];
 }
 
 parameters {
   // seed
   real alpha_sc;
-//  real beta_GST1;
-  real<lower=0> sigma_sc;
+  real beta_sc;
+  real<lower=0> phi_sc;
   
   //growth
   real alpha_BAI;
-//  real beta_GST2;
-  
-   // growth deviations
-  matrix[I,T] G;
-  real<lower=0> sigma_G;
+  real beta_BAI;
   real<lower=0> sigma_BAI;
   
-  //trade-off
-  real gamma_current;
-  real gamma_lag;
   
+  //trade-off
+  real gamma1;
+  real gamma2;
   
 }
 
 model {
-  alpha_BAI ~ normal(2, 5);
-//  beta_GST1 ~ normal(0, 1);
-  sigma_BAI ~ normal(0, 0.5);
-  sigma_G ~ normal (0,0.5);
-  
-  alpha_sc ~ normal(0, 1);
-//  beta_GST2 ~ normal(0, 1);
-  sigma_sc ~ normal(0, 1);
-  
-  gamma_current ~ normal(0, 5);
-  gamma_lag ~ normal(0, 5);
+  alpha_BAI    ~ normal(0, 1);
+  beta_BAI    ~ normal(0, 1);
+  sigma_BAI ~ normal(0, 1);
 
-  for (i in 1:I) {
+  alpha_sc ~ normal(0, 2);
+  beta_sc  ~ normal(0, 1);
+  gamma1   ~ normal(0, 1);
+  gamma2   ~ normal(0, 1);
+  phi_sc   ~ exponential(1);
 
-    G[i,1] ~ normal(0, sigma_G);
-    
-    real G_mu_1 = alpha_BAI + G[i,1];
+BAI ~ normal(alpha_BAI + beta_BAI * BAI_lag, sigma_BAI);
 
-    BAI[i,1] ~ lognormal(G_mu_1, sigma_BAI);
-    
-    real log_mu_sc_1 = alpha_sc + //beta_GST1 * (GST[1] - 15) 
-    + gamma_current * G[i,1];
-    
-      sc[i, 1] ~ lognormal(log_mu_sc_1, sigma_sc);
-  
-    for (t in 2:T){
-    G[i,t] ~ normal(0, sigma_G);
-      
-    real G_mu = alpha_BAI + G[i,t];
-    ;
-    real G_mu_lag =  alpha_BAI + G[i,t-1];
-
-        BAI[i,t] ~ lognormal(G_mu, sigma_BAI);
-        
-    real log_mu_sc = alpha_sc + //beta_GST1 * (GST[t]-15) 
-    + gamma_current * G[i,t] + gamma_lag * G[i,t-1];
-                       
-      sc[i, t] ~ lognormal(log_mu_sc, sigma_sc);
-
+  vector[N] G = alpha_BAI + beta_BAI * BAI_lag;
+  vector[N_years] sum_G = rep_vector(0, N_years);
+  vector[N_years] cnt   = rep_vector(0, N_years);
+  for (n in 1:N) {
+    sum_G[year[n]] += G[n];
+    cnt[year[n]]   += 1;
   }
-}
-}
+  vector[N_years] Gbar = sum_G ./ cnt;
+  
+  vector[N_t] log_sc_mu;
+  for (t in 1:N_t)
+    log_sc_mu[t] = alpha_sc
+              + gamma1 * Gbar[year_t_lag[t]]
+              + gamma2 * Gbar[year_t[t]];
+
+  sc ~ neg_binomial_2_log(log_sc_mu, phi_sc);
+  
+  }
 
 
