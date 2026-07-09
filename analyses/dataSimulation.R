@@ -516,76 +516,40 @@ source('mcmc_analysis_tools_rstan.R', local=util)
 source('mcmc_visualization_tools.R', local=util)
 set.seed(112233)
 
-N_trees <- 20
-N_years <- 20
+N <- 20
+N_years <- 15
 
-alpha_BAI <- 5
-beta_BAI <- 0.3
-sigma_BAI <- 5
+G <- log(runif(N_years, min = 6, max = 9))
 
-beta_sc <- 0.25 
-gamma_current <- -0.2
-gamma_lag <- -0.05
-phi_sc <- 3
+sigma_BAI <- 0.15
 
-G <- matrix(NA, nrow = N_trees, ncol = N_years)
-BAI <- matrix(NA, nrow = N_trees, ncol = N_years) 
+alpha_sc      <- 0.5
+gamma_current <- 0.15
+gamma_lag     <- -0.10
+sigma_sc      <- 0.5
 
-BAI[, 1] <- rnorm(N_trees, mean = 7, sd = 5)
-BAI[BAI < 0] <- 0.1
+d <- expand.grid(tree = 1:N, year = 1:N_years)
+d$BAI <- rlnorm(nrow(d), meanlog = G[d$year], sdlog = sigma_BAI)
 
-G[, 1]   <- BAI[, 1]
+seed_years <- 2:N_years
 
-for (t in 2:N_years) {
-  G[, t]   <- alpha_BAI + beta_BAI * BAI[, t - 1]
-  BAI[, t] <- rnorm(N_trees, mean = G[, t], sd = sigma_BAI)
-  BAI[BAI < 0] <- 0.1
-}
+d_sc <- expand.grid(tree = 1:N, year = seed_years)
+log_mu_sc <- alpha_sc +
+  gamma_current * G[d_sc$year] +
+  gamma_lag * G[d_sc$year - 1]
 
-seed_years  <- 3:N_years
-N_t         <- length(seed_years)
-year_t      <- seed_years
-year_t_lag <- seed_years - 1
-
-Gbar <- colMeans(G)
-Gbar_centered <- Gbar - mean(Gbar[year_t])
-
-sc_full <- rep(NA, N_years)
-sc_full[1] <- rpois(1, lambda = 3)
-sc_full[2] <- rpois(1, lambda = 3)
-
-for (t in 3:N_years) {
-log_sc_mu <- beta_sc * log1p(sc_full[t - 1]) +
-  gamma_current * Gbar_centered[t] + gamma_lag * Gbar_centered[t-1]
-
-mu_sc <- exp(log_sc_mu)
-sc_full[t] <- rnbinom(1, mu = mu_sc, size = phi_sc)
-}
-d <- expand.grid(tree = 1:N_trees, year = 2:N_years)
-d$BAI <- BAI[cbind(d$tree, d$year)]
-d$lag <- BAI[cbind(d$tree, d$year - 1)]
-
-N <- nrow(d)
-year <- d$year
-
-sc          <- sc_full[seed_years]
-sc_lag      <- sc_full[seed_years - 1]
-
+d_sc$sc <- rlnorm(nrow(d_sc), meanlog = log_mu_sc, sdlog = sigma_sc)
 
 stanData <- list(
-  N = N,
+  N = nrow(d),
   BAI = d$BAI,
-  BAI_lag = d$lag,
-  year = year,
+  year = d$year,
   N_years = N_years,
   
-  N_t = N_t,
-  sc = sc,
-  sc_lag = sc_lag,
-  year_t = year_t,
-  year_t_lag = year_t_lag
+  N_sc = nrow(d_sc),
+  sc = d_sc$sc,
+  year_sc = d_sc$year
 )
-
 mod <- stan_model(file='stan/simpleTradeOff.stan')
 
 fit <- stan(file='stan/simpleTradeOff.stan', data=stanData, seed=112234, control=list(adapt_delta=0.99))
@@ -595,27 +559,20 @@ diagnostics <- util$extract_hmc_diagnostics(fit)
 print(util$check_all_hmc_diagnostics(diagnostics))
 
 samples <- util$extract_expectand_vals(fit)
-names <- c(grep('alpha_BAI', names(samples), value = TRUE),
-           grep('beta_BAI', names(samples), value = TRUE),
-           grep('sigma_BAI', names(samples), value = TRUE),
+names <- c(grep('sigma_BAI', names(samples), value = TRUE),
            grep('alpha_sc', names(samples), value = TRUE),
-           grep('beta_sc', names(samples), value = TRUE),
            grep('gamma_current', names(samples), value = TRUE),
            grep('gamma_lag', names(samples), value = TRUE),
-           grep('sigma_sc', names(samples), value = TRUE),
-           grep('phi_sc', names(samples), value = TRUE))
+           grep('sigma_sc', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
 print(fit, pars = names)
 
+util$plot_pairs_by_chain(samples[['gamma_lag']], 'gamma_lag',
+                         samples[['gamma_current']], 'gamma_current')
 util$plot_pairs_by_chain(samples[['alpha_sc']], 'alpha_sc',
                          samples[['gamma_current']], 'gamma_current')
-
-util$plot_pairs_by_chain(samples[['beta_sc']], 'beta_sc',
-                         samples[['gamma_current']], 'gamma_current')
-
-
 ### Ines model
 rm(list = ls())
 options(stringsAsFactors = FALSE)
