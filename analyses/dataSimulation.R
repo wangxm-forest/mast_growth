@@ -352,3 +352,319 @@ abline(v = 0.2, col = "red", lwd = 2)
 
 dev.off()
 
+###for simple model###
+set.seed(2266)
+I <- 100
+T <- 30
+
+# Simulate predictors
+# Growing season temperature
+# GST <- rnorm(T, mean = 15, sd = 1)
+# Define True Parameters
+alpha_BAI <- 2
+#beta_GST2 <- 0.05
+sigma_BAI <- 0.1
+sigma_G <- 0.2
+
+alpha_sc <- 0
+#beta_GST1 <- 0.3
+gamma_current <- -4
+gamma_lag <- -1
+
+sigma_sc <- 1
+
+G <- matrix(rnorm(I*T, 0, sigma_G), I, T)
+BAI <- matrix(NA, nrow = I, ncol = T)
+sc  <- matrix(0,  nrow = I, ncol = T)
+
+for (i in 1:I) {
+  for (t in 1:T) {
+
+    G_mu <- alpha_BAI + G[i,t]
+    
+    G_mu_lag <- alpha_BAI + G[i,t-1]
+
+    BAI[i, t] <- rlnorm(1, meanlog = G_mu, sdlog = sigma_BAI)
+    
+    if (t > 1) {
+      log_mu_sc <- alpha_sc + 
+        gamma_current * G[i,t] + 
+        gamma_lag * G[i,t-1]
+      
+      sc[i, t] <- rlnorm(1, meanlog = log_mu_sc, sdlog = sigma_sc)
+      
+    } else {
+      G_mu_1 <- alpha_BAI + G[i,1]
+           
+      BAI[i, 1] <- rlnorm(1, meanlog = G_mu_1, sdlog = sigma_BAI)
+      
+      log_mu_sc_year1 <- alpha_sc + gamma_current * G[i,1]
+      
+      sc[i, 1] <- rlnorm(1, meanlog = log_mu_sc_year1, sdlog = sigma_sc)
+    }
+  }
+}
+
+stanData <- list(
+  I = I,
+  T = T,
+  sc = sc,
+  BAI = BAI
+)
+
+mod <- stan_model(file='stan/simpleTradeOff.stan')
+
+fit <- stan(file='stan/simpleTradeOff.stan', data=stanData, seed=112234, control=list(adapt_delta=0.99))
+
+diagnostics <- util$extract_hmc_diagnostics(fit)
+
+print(util$check_all_hmc_diagnostics(diagnostics))
+
+samples <- util$extract_expectand_vals(fit)
+names <- c(grep('alpha_BAI', names(samples), value = TRUE),
+           grep('sigma_BAI', names(samples), value = TRUE),
+           grep('alpha_sc', names(samples), value = TRUE),
+           grep('gamma_current', names(samples), value = TRUE),
+           grep('gamma_lag', names(samples), value = TRUE),
+           grep('sigma_sc', names(samples), value = TRUE),
+           grep('sigma_G', names(samples), value = TRUE))
+
+base_samples <- util$filter_expectands(samples,names)
+print(util$check_all_expectand_diagnostics(base_samples))
+print(fit, pars = names)
+util$plot_pairs_by_chain(samples[['alpha_sc']], 'alpha_sc',
+                         samples[['gamma_current']], 'gamma_current')
+util$plot_pairs_by_chain(samples[['alpha_sc']]^2, 'alpha_sc^2',
+                         samples[['gamma_current']]^2, 'gamma_current^2')
+
+
+pdf("figures/priorPosteriorPlotSimple.pdf", height = 9, width = 9)
+par(mfrow = c(3,3))
+util$plot_expectand_pushforward(samples[['alpha_BAI']], 50, display_name = "alpha_BAI")
+curve(dlnorm(x, 5,2),
+      add = TRUE,
+      col = "blue",
+      lwd = 2)
+abline(v = 2, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['beta_GST2']], 50, display_name = "beta_GST2")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.05, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['sigma_BAI']], 50, display_name = "sigma_BAI")
+curve(dnorm(x, 0, 5),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.5, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['alpha_sc']], 50, display_name = "alpha_sc")
+curve(dnorm(x, 0.5, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.5, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['beta_GST1']], 50, display_name = "beta_GST1")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.3, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['gamma_current']], 50, display_name = "gamma_current")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = -0.2, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['gamma_lag']], 50, display_name = "gamma_lag")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = -0.1, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['sigma_sc']], 50, display_name = "sigma_sc")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 1, col = "red", lwd = 2)
+
+dev.off()
+
+# Edits on Ines's model
+rm(list = ls())
+options(stringsAsFactors = FALSE)
+options(mc.cores = parallel::detectCores())
+
+setwd("C:/PhD/Project/PhD_thesis/mast_growth/analyses")
+util <- new.env()
+source('mcmc_analysis_tools_rstan.R', local=util)
+source('mcmc_visualization_tools.R', local=util)
+set.seed(112233)
+
+N <- 20
+N_years <- 15
+
+G <- log(runif(N_years, min = 6, max = 9))
+
+sigma_BAI <- 0.15
+
+alpha_sc      <- 0.5
+gamma_current <- 0.15
+gamma_lag     <- -0.10
+sigma_sc      <- 0.5
+
+d <- expand.grid(tree = 1:N, year = 1:N_years)
+d$BAI <- rlnorm(nrow(d), meanlog = G[d$year], sdlog = sigma_BAI)
+
+seed_years <- 2:N_years
+
+d_sc <- expand.grid(tree = 1:N, year = seed_years)
+log_mu_sc <- alpha_sc +
+  gamma_current * G[d_sc$year] +
+  gamma_lag * G[d_sc$year - 1]
+
+d_sc$sc <- rlnorm(nrow(d_sc), meanlog = log_mu_sc, sdlog = sigma_sc)
+
+stanData <- list(
+  N = nrow(d),
+  BAI = d$BAI,
+  year = d$year,
+  N_years = N_years,
+  
+  N_sc = nrow(d_sc),
+  sc = d_sc$sc,
+  year_sc = d_sc$year
+)
+mod <- stan_model(file='stan/simpleTradeOff.stan')
+
+fit <- stan(file='stan/simpleTradeOff.stan', data=stanData, seed=112234, control=list(adapt_delta=0.99))
+
+diagnostics <- util$extract_hmc_diagnostics(fit)
+
+print(util$check_all_hmc_diagnostics(diagnostics))
+
+samples <- util$extract_expectand_vals(fit)
+names <- c(grep('sigma_BAI', names(samples), value = TRUE),
+           grep('alpha_sc', names(samples), value = TRUE),
+           grep('gamma_current', names(samples), value = TRUE),
+           grep('gamma_lag', names(samples), value = TRUE),
+           grep('sigma_sc', names(samples), value = TRUE))
+
+base_samples <- util$filter_expectands(samples,names)
+print(util$check_all_expectand_diagnostics(base_samples))
+print(fit, pars = names)
+
+util$plot_pairs_by_chain(samples[['gamma_lag']], 'gamma_lag',
+                         samples[['gamma_current']], 'gamma_current')
+util$plot_pairs_by_chain(samples[['alpha_sc']], 'alpha_sc',
+                         samples[['gamma_current']], 'gamma_current')
+### Ines model
+rm(list = ls())
+options(stringsAsFactors = FALSE)
+options(mc.cores = parallel::detectCores())
+
+setwd("C:/PhD/Project/PhD_thesis/mast_growth/analyses")
+util <- new.env()
+source('mcmc_analysis_tools_rstan.R', local=util)
+source('mcmc_visualization_tools.R', local=util)
+set.seed(332211)
+N_trees <- 20
+N_years <- 100
+
+alpha1    <- 0.30
+sigma_BAI <- 0.8
+
+beta   <- 0.25
+gamma1 <- -0.15
+gamma2 <- -0.20
+sigma_sc <- 0.7
+
+BAI <- matrix(NA, nrow = N_trees, ncol = N_years)
+BAI[, 1] <- rnorm(N_trees, 0, 1)
+
+for (t in 2:N_years) {
+  BAI[, t] <- rnorm(N_trees, mean = alpha1 * BAI[, t - 1], sd = sigma_BAI)
+}
+
+Gbar <- colMeans(BAI)
+
+repro_full <- rep(NA, N_years)
+repro_full[1] <- rnorm(1, 0, 1)
+
+for (t in 2:N_years) {
+  R_t <- beta * repro_full[t - 1] +
+    gamma1 * Gbar[t - 1] +
+    gamma2 * Gbar[t]
+  repro_full[t] <- rnorm(1, mean = R_t, sd = sigma_sc)
+}
+
+d <- expand.grid(tree = 1:N_trees, year = 2:N_years)
+d$BAI     <- BAI[cbind(d$tree, d$year)]
+d$BAI_lag <- BAI[cbind(d$tree, d$year - 1)]
+
+N    <- nrow(d)
+year <- d$year
+
+
+seed_years  <- 3:N_years
+N_t         <- length(seed_years)
+repro       <- repro_full[seed_years]
+repro_lag   <- repro_full[seed_years - 1]
+year_t      <- seed_years
+year_t_lag  <- seed_years - 1
+
+stanData <- list(
+  N = N,
+  BAI = d$BAI,
+  BAI_lag = d$BAI_lag,
+  year = year,
+  N_years = N_years,
+  
+  N_t = N_t,
+  repro = repro,
+  repro_lag = repro_lag,
+  year_t = year_t,
+  year_t_lag = year_t_lag
+)
+
+
+
+mod <- stan_model(file='stan/reproduceInesModel.stan')
+
+fit <- stan(file='stan/reproduceInesModel.stan', data=stanData, seed=112234, control=list(adapt_delta=0.99))
+
+diagnostics <- util$extract_hmc_diagnostics(fit)
+
+print(util$check_all_hmc_diagnostics(diagnostics))
+
+samples <- util$extract_expectand_vals(fit)
+names <- c(grep('alpha1', names(samples), value = TRUE),
+           grep('sigma_BAI', names(samples), value = TRUE),
+           grep('beta', names(samples), value = TRUE),
+           grep('gamma1', names(samples), value = TRUE),
+           grep('gamma2', names(samples), value = TRUE),
+           grep('sigma_sc', names(samples), value = TRUE))
+
+base_samples <- util$filter_expectands(samples,names)
+print(util$check_all_expectand_diagnostics(base_samples))
+print(fit, pars = names)
+
+util$plot_pairs_by_chain(samples[['gamma2']], 'gamma2',
+                         samples[['gamma1']], 'gamma1')
+
+print(fit, pars = c("beta", "gamma1", "gamma2", "sigma_sc"))

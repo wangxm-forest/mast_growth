@@ -1,3 +1,4 @@
+
 *synctex.gz
 *.Rdata
 *.RData
@@ -15,5 +16,6 @@ analyses/.Rhistory
 *.log
 *.out
 *.run.xml
+*.pptx
 data/MORA2024
 data/measurement
