@@ -45,12 +45,12 @@ transformed parameters {
 
 model {
   alpha_BAI ~ normal(7, 3);
-  sigma_BAI ~ exponential(1);
+  sigma_BAI ~ normal(0, 1);
 
-  alpha_sc ~ normal(0, 2);
+  alpha_sc ~ normal(0, 1);
   gamma_current ~ normal(0, 1);
   gamma_lag ~ normal(0, 1);
-  sigma_sc ~ exponential(1);
+  sigma_sc ~ normal(0, 1);
 
   BAI ~ normal(alpha_BAI, sigma_BAI);
 

@@ -519,24 +519,29 @@ set.seed(112233)
 N <- 20
 N_years <- 15
 
-G <- log(runif(N_years, min = 6, max = 9))
-
-sigma_BAI <- 0.15
-
-alpha_sc      <- 0.5
-gamma_current <- 0.15
-gamma_lag     <- -0.10
-sigma_sc      <- 0.5
+alpha_BAI <- 7.5
+sigma_BAI <- 1.2 
+alpha_sc <- 0.6
+gamma_current <- -3
+gamma_lag <- -0.5
+sigma_sc <- 0.3
 
 d <- expand.grid(tree = 1:N, year = 1:N_years)
-d$BAI <- rlnorm(nrow(d), meanlog = G[d$year], sdlog = sigma_BAI)
+d$BAI <- rnorm(nrow(d), mean = alpha_BAI, sd = sigma_BAI)
+
+d$BAI[d$BAI < 0] <- 0.1
+
+d$G <- d$BAI - alpha_BAI
+
+Gbar <- tapply(d$G, d$year, mean)
+Gbar <- as.numeric(Gbar[order(as.numeric(names(Gbar)))])
 
 seed_years <- 2:N_years
 
 d_sc <- expand.grid(tree = 1:N, year = seed_years)
 log_mu_sc <- alpha_sc +
-  gamma_current * G[d_sc$year] +
-  gamma_lag * G[d_sc$year - 1]
+  gamma_current * Gbar[d_sc$year] +
+  gamma_lag * Gbar[d_sc$year - 1]
 
 d_sc$sc <- rlnorm(nrow(d_sc), meanlog = log_mu_sc, sdlog = sigma_sc)
 
@@ -559,7 +564,8 @@ diagnostics <- util$extract_hmc_diagnostics(fit)
 print(util$check_all_hmc_diagnostics(diagnostics))
 
 samples <- util$extract_expectand_vals(fit)
-names <- c(grep('sigma_BAI', names(samples), value = TRUE),
+names <- c(grep('alpha_BAI', names(samples), value = TRUE),
+           grep('sigma_BAI', names(samples), value = TRUE),
            grep('alpha_sc', names(samples), value = TRUE),
            grep('gamma_current', names(samples), value = TRUE),
            grep('gamma_lag', names(samples), value = TRUE),
@@ -573,6 +579,58 @@ util$plot_pairs_by_chain(samples[['gamma_lag']], 'gamma_lag',
                          samples[['gamma_current']], 'gamma_current')
 util$plot_pairs_by_chain(samples[['alpha_sc']], 'alpha_sc',
                          samples[['gamma_current']], 'gamma_current')
+pdf("figures/priorPosteriorPlotSimple.pdf", height = 9, width = 9)
+par(mfrow = c(3,3))
+util$plot_expectand_pushforward(samples[['alpha_BAI']], 50, display_name = "alpha_BAI")
+curve(dnorm(x, 7,3),
+      add = TRUE,
+      col = "blue",
+      lwd = 2)
+abline(v = 7.5, col = "red", lwd = 2)
+
+
+util$plot_expectand_pushforward(samples[['sigma_BAI']], 50, display_name = "sigma_BAI")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 1.2, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['alpha_sc']], 50, display_name = "alpha_sc")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.6, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['gamma_current']], 50, display_name = "gamma_current")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = -3, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['gamma_lag']], 50, display_name = "gamma_lag")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = -0.5, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['sigma_sc']], 50, display_name = "sigma_sc")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.3, col = "red", lwd = 2)
+
+dev.off()
+
 ### Ines model
 rm(list = ls())
 options(stringsAsFactors = FALSE)
