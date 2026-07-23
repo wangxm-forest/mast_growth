@@ -505,7 +505,7 @@ abline(v = 1, col = "red", lwd = 2)
 
 dev.off()
 
-# Edits on Ines's model
+# simpler model with annual G_t
 rm(list = ls())
 options(stringsAsFactors = FALSE)
 options(mc.cores = parallel::detectCores())
@@ -516,7 +516,7 @@ source('mcmc_analysis_tools_rstan.R', local=util)
 source('mcmc_visualization_tools.R', local=util)
 set.seed(112233)
 
-N <- 20
+N <- 50
 N_years <- 15
 
 alpha_BAI <- 7.5
