@@ -5,7 +5,7 @@ library("dplR")
 library("dplyr")
 setwd("C:/PhD/Project/PhD_thesis/mast_growth")
 
-###Read in the ring width data
+# Read in the ring width data
 AB08THSE <- read.rwl("data/measurement/crossDated/AB08_TSHE_dated.rwl", format = "auto")
 
 treeID <- sub("\\(.*\\)$", "", colnames(AB08THSE))
@@ -19,10 +19,9 @@ ringWidth <- sapply(split(seq_along(treeID), treeID), function(i) {
   }
 })
 
-# Keep row names (years)
 rownames(ringWidth) <- rownames(AB08THSE)
 
-###Read in the DBH data
+# Read in the DBH data
 dbh <- read.csv("data/dbhMORA.csv",header = TRUE)
 
 mora_stand <- c("AB08", "AV06", "TO04", "TA01", "AO03", "AG05", "AE10", "AM16")
@@ -32,3 +31,8 @@ latest_dbh <- do.call(rbind, lapply(split(dbh, list(dbh$STANDID, dbh$TAG)), func
   x[which.max(x$YEAR), ]
 }))
 
+# Subset for only trees we cored
+
+trees <- colnames(ringWidth)
+
+dbh_trees <- latest_dbh[latest_dbh$TAG %in% trees, ]
