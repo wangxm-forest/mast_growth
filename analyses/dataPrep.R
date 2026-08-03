@@ -1,17 +1,21 @@
 ###################Started by Mao####################
 ###################July 23,2026######################
 
+rm(list = ls())
+options(stringsAsFactors = FALSE)
+options(mc.cores = parallel::detectCores())
+
 library("dplR")
 library("dplyr")
-setwd("C:/PhD/Project/PhD_thesis/mast_growth")
+setwd("C:/PhD/Project/PhD_thesis/mast_growth/analyses")
 
 # Read in the ring width data
-AB08THSE <- read.rwl("data/measurement/crossDated/AB08_TSHE_dated.rwl", format = "auto")
+AB08THSE <- read.rwl("C:/PhD/Project/PhD_thesis/mast_growth/data/measurement/crossDated/AB08_TSHE_dated.rwl", format = "auto")
 
 treeID <- sub("\\(.*\\)$", "", colnames(AB08THSE))
 
 # Average across cores from the same tree
-ringWidth <- sapply(split(seq_along(treeID), treeID), function(i) {
+ring <- sapply(split(seq_along(treeID), treeID), function(i) {
   if (length(i) == 1) {
     AB08THSE[, i]
   } else {
@@ -19,10 +23,26 @@ ringWidth <- sapply(split(seq_along(treeID), treeID), function(i) {
   }
 })
 
-rownames(ringWidth) <- rownames(AB08THSE)
+rownames(ring) <- rownames(AB08THSE)
+
+# Read in seed data
+seed <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/MORA_cleanseeds_2009-2017.csv",header = TRUE)
+
+seed$totalseeds <- seed$filledseeds + seed$emptyseeds
+
+seed_stand <- aggregate(
+  cbind(filledseeds, totalseeds) ~ year + stand + species,
+  data = seed,
+  FUN = sum,
+  na.rm = TRUE
+)
+
+# subset seed data
+
+seed_sub <- seed[seed$stand == "AB08" & seed$species == "TSHE", ]
 
 # Read in the DBH data
-dbh <- read.csv("data/dbhMORA.csv",header = TRUE)
+dbh <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/dbhMORA.csv",header = TRUE)
 
 mora_stand <- c("AB08", "AV06", "TO04", "TA01", "AO03", "AG05", "AE10", "AM16")
 dbh <- dbh[dbh$STANDID %in% mora_stand, ]
@@ -33,6 +53,111 @@ latest_dbh <- do.call(rbind, lapply(split(dbh, list(dbh$STANDID, dbh$TAG)), func
 
 # Subset for only trees we cored
 
-trees <- colnames(ringWidth)
+trees <- colnames(ring)
 
 dbh_trees <- latest_dbh[latest_dbh$TAG %in% trees, ]
+
+
+# Make ring width data in the correct format
+ringwidth_reshape <- data.frame(
+  TAG = rep(colnames(ring), each = nrow(ring)),
+  year    = rep(as.numeric(rownames(ring)), times = ncol(ring)),
+  ringWidth = as.vector(as.matrix(ring))
+)
+ringwidth_reshape <- ringwidth_reshape[!is.na(ringwidth_reshape$ringWidth), ]
+
+# Prepare BAI data
+# Calculate radius per year
+
+reconstruct_tree <- function(tree_tag, dbh_trees, ringwidth_reshape) {
+  dbh_row  <- dbh_trees[dbh_trees$TAG == tree_tag, ]
+  ref_year <- dbh_row$YEAR
+  r_ref    <- dbh_row$DBH / 2
+
+  tree_rings <- ringwidth_reshape[ringwidth_reshape$TAG == tree_tag, ]
+  tree_rings <- tree_rings[order(tree_rings$year), ]
+
+  # Check the reference year actually falls within the tree's ring-width span
+  if (ref_year < min(tree_rings$year) || ref_year > max(tree_rings$year)) {
+    warning(paste("Tree", TAG, "- DBH year", ref_year,
+                   "falls outside ring-width data range; skipping"))
+    return(NULL)
+  }
+
+  tree_rings$cum_width <- cumsum(tree_rings$ringWidth)   # running total up to & including each year
+
+  cum_at_ref <- tree_rings$cum_width[tree_rings$year == ref_year]
+  if (length(cum_at_ref) == 0) {
+    warning(paste("Tree", TAG, "- no ring width recorded exactly at DBH year", ref_year))
+    return(NULL)
+  }
+
+  tree_rings$radius <- r_ref + tree_rings$cum_width - cum_at_ref
+  tree_rings$TAG <- tree_tag
+  tree_rings
+}
+
+all_trees <- unique(ringwidth_reshape$TAG)
+recon_list <- lapply(all_trees, reconstruct_tree, dbh_trees = dbh_trees, ringwidth_reshape = ringwidth_reshape)
+recon <- do.call(rbind, recon_list)
+
+recon <- recon[order(recon$TAG, recon$year), ]
+recon$BA <- pi * recon$radius^2
+recon$BAI <- ave(recon$BA, recon$TAG, FUN = function(x) c(NA, diff(x)))
+
+bai_2009_2017 <- recon[recon$year >= 2009 & recon$year <= 2017 & !is.na(recon$BAI), ]
+
+# Prepare seed data
+all_years <- 2009:2017
+N_years <- length(all_years)
+year_lookup <- data.frame(year = all_years, year_idx = 1:N_years)
+
+seed_sub <- merge(seed_sub, year_lookup, by = "year")
+seed_sub <- seed_sub[seed_sub$year_idx >= 2, ]
+
+bai_2009_2017 <- merge(bai_2009_2017, year_lookup, by = "year")
+
+stan_data_growth <- list(
+  N = nrow(bai_2009_2017),
+  BAI = bai_2009_2017$BAI,
+  year = bai_2009_2017$year_idx,
+  N_years = N_years
+)
+
+stan_data_filled <- c(stan_data_growth, list(
+  N_sc = nrow(seed_sub),
+  sc = seed_sub$filledseeds,
+  year_sc = seed_sub$year_idx
+))
+
+stan_data_filled$sc <- seed_sub$filledseeds + 1
+
+stan_data_total <- c(stan_data_growth, list(
+  N_sc = nrow(seed_sub),
+  sc = seed_sub$totalseeds,
+  year_sc = seed_sub$year_idx
+))
+
+mod <- stan_model(file='stan/simpleTradeOff.stan')
+
+fit <- stan(file='stan/simpleTradeOff.stan', data=stan_data_filled, seed=112234, control=list(adapt_delta=0.99))
+
+util <- new.env()
+source('mcmc_analysis_tools_rstan.R', local=util)
+source('mcmc_visualization_tools.R', local=util)
+
+diagnostics <- util$extract_hmc_diagnostics(fit)
+
+print(util$check_all_hmc_diagnostics(diagnostics))
+
+samples <- util$extract_expectand_vals(fit)
+names <- c(grep('alpha_BAI', names(samples), value = TRUE),
+           grep('sigma_BAI', names(samples), value = TRUE),
+           grep('alpha_sc', names(samples), value = TRUE),
+           grep('gamma_current', names(samples), value = TRUE),
+           grep('gamma_lag', names(samples), value = TRUE),
+           grep('sigma_sc', names(samples), value = TRUE))
+
+base_samples <- util$filter_expectands(samples,names)
+print(util$check_all_expectand_diagnostics(base_samples))
+print(fit, pars = names)
