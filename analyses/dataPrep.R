@@ -7,6 +7,7 @@ options(mc.cores = parallel::detectCores())
 
 library("dplR")
 library("dplyr")
+library("ggplot2")
 setwd("C:/PhD/Project/PhD_thesis/mast_growth/analyses")
 
 # Read in the ring width data
@@ -24,6 +25,14 @@ ring <- sapply(split(seq_along(treeID), treeID), function(i) {
 })
 
 rownames(ring) <- rownames(AB08THSE)
+# Merge all available seed data
+y2018 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2018.csv",header = TRUE)
+y2019 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2019.csv",header = TRUE)
+y2020 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
+y2021 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
+y2022 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
+y2023 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
+y2024 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
 
 # Read in seed data
 seed <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/MORA_cleanseeds_2009-2017.csv",header = TRUE)
@@ -161,3 +170,29 @@ names <- c(grep('alpha_BAI', names(samples), value = TRUE),
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
 print(fit, pars = names)
+
+post <- as.data.frame(fit)
+
+params_df <- data.frame(
+  parameter = c("gamma_current", "gamma_lag"),
+  mean = c(mean(post$gamma_current), mean(post$gamma_lag)),
+  lower = c(quantile(post$gamma_current, 0.025), quantile(post$gamma_lag, 0.025)),
+  upper = c(quantile(post$gamma_current, 0.975), quantile(post$gamma_lag, 0.975))
+)
+
+p <- ggplot(params_df, aes(x = parameter, y = mean)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_pointrange(aes(ymin = lower, ymax = upper), size = 1) +
+  labs(y = "Effect on log(expected seed count)", x = NULL) +
+  theme_minimal(base_size = 14) +
+  coord_flip() + theme(
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+
+ggsave("figures/parametersPrelim.png", p, bg="transparent")
+
