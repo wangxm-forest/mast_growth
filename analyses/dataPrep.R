@@ -8,6 +8,7 @@ options(mc.cores = parallel::detectCores())
 library("dplR")
 library("dplyr")
 library("ggplot2")
+library("rstan")
 setwd("C:/PhD/Project/PhD_thesis/mast_growth/analyses")
 
 # Read in the ring width data
@@ -26,6 +27,8 @@ ring <- sapply(split(seq_along(treeID), treeID), function(i) {
 
 rownames(ring) <- rownames(AB08THSE)
 # Merge all available seed data
+merge <- FALSE
+if(merge){
 y2018 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2018.csv",header = TRUE)
 y2019 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2019.csv",header = TRUE)
 y2020 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
@@ -34,11 +37,22 @@ y2022 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/S
 y2023 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
 y2024 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
 
+y1824 <- rbind(y2018,y2019,y2020,y2021,y2022,y2023,y2024)
+colnames(y1824)
+colnames(seed)
+y1824 <- y1824[-11]
+colnames(y1824) <- c('year','stand','trap','species','filledseeds','emptyseeds','cones','conefilledseeds','coneemptyseeds','totconeseeds','standardized_notes')
+fullSeed <- rbind(y1824,seed)
+write.csv(fullSeed,"C:/PhD/Project/PhD_thesis/mast_growth/data/seedMORAFull.csv")
+}
+
 # Read in seed data
-seed <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/MORA_cleanseeds_2009-2017.csv",header = TRUE)
+seed <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/seedMORAFull.csv",header = TRUE)
 
-seed$totalseeds <- seed$filledseeds + seed$emptyseeds
+# Make new columns for total seeds and total filled seeds
+seed$totalseeds <- seed$filledseeds + seed$emptyseeds + seed$conefilledseeds + seed$coneemptyseeds
 
+seed$totalfilled <- seed$filledseeds + seed$conefilledseeds
 seed_stand <- aggregate(
   cbind(filledseeds, totalseeds) ~ year + stand + species,
   data = seed,
@@ -76,7 +90,7 @@ ringwidth_reshape <- data.frame(
 ringwidth_reshape <- ringwidth_reshape[!is.na(ringwidth_reshape$ringWidth), ]
 
 # Prepare BAI data
-# Calculate radius per year
+# Calculate radius per year, I used genAI to help me finish writing this function
 
 reconstruct_tree <- function(tree_tag, dbh_trees, ringwidth_reshape) {
   dbh_row  <- dbh_trees[dbh_trees$TAG == tree_tag, ]
@@ -135,7 +149,7 @@ stan_data_growth <- list(
 
 stan_data_filled <- c(stan_data_growth, list(
   N_sc = nrow(seed_sub),
-  sc = seed_sub$filledseeds,
+  sc = seed_sub$totalfilled,
   year_sc = seed_sub$year_idx
 ))
 
@@ -147,9 +161,9 @@ stan_data_total <- c(stan_data_growth, list(
   year_sc = seed_sub$year_idx
 ))
 
-mod <- stan_model(file='stan/simpleTradeOff.stan')
+mod <- stan_model(file='C:/PhD/Project/PhD_thesis/mast_growth/analyses/stan/simpleTradeOff.stan')
 
-fit <- stan(file='stan/simpleTradeOff.stan', data=stan_data_filled, seed=112234, control=list(adapt_delta=0.99))
+fit <- stan(file='C:/PhD/Project/PhD_thesis/mast_growth/analyses/stan/simpleTradeOff.stan', data=stan_data_filled, seed=112234, control=list(adapt_delta=0.99))
 
 util <- new.env()
 source('mcmc_analysis_tools_rstan.R', local=util)
