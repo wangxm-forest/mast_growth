@@ -27,21 +27,22 @@ ring <- sapply(split(seq_along(treeID), treeID), function(i) {
 
 rownames(ring) <- rownames(AB08THSE)
 # Merge all available seed data
-merge <- FALSE
+merge <- TRUE
 if(merge){
+seed <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/MORA_cleanseeds_2009-2017.csv")
 y2018 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2018.csv",header = TRUE)
 y2019 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2019.csv",header = TRUE)
 y2020 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
-y2021 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
-y2022 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
-y2023 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
-y2024 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2020.csv",header = TRUE)
+y2021 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2021.csv",header = TRUE)
+y2022 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2022.csv",header = TRUE)
+y2023 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2023.csv",header = TRUE)
+y2024 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2024.csv",header = TRUE)
 
 y1824 <- rbind(y2018,y2019,y2020,y2021,y2022,y2023,y2024)
 colnames(y1824)
 colnames(seed)
 y1824 <- y1824[-11]
-colnames(y1824) <- c('year','stand','trap','species','filledseeds','emptyseeds','cones','conefilledseeds','coneemptyseeds','totconeseeds','standardized_notes')
+colnames(y1824) <- c('year','stand','trap','species','filledseeds','emptyseeds','cones','conefilledseeds','coneemptyseeds','totconeseeds')
 fullSeed <- rbind(y1824,seed)
 write.csv(fullSeed,"C:/PhD/Project/PhD_thesis/mast_growth/data/seedMORAFull.csv")
 }
@@ -62,7 +63,8 @@ seed_stand <- aggregate(
 
 # subset seed data
 
-seed_sub <- seed[seed$stand == "AB08" & seed$species == "TSHE", ]
+seed_sub <- seed_stand[seed_stand$stand == "AB08" & seed_stand$species == "TSHE", ]
+
 
 # Read in the DBH data
 dbh <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/dbhMORA.csv",header = TRUE)
@@ -128,22 +130,22 @@ recon <- recon[order(recon$TAG, recon$year), ]
 recon$BA <- pi * recon$radius^2
 recon$BAI <- ave(recon$BA, recon$TAG, FUN = function(x) c(NA, diff(x)))
 
-bai_2009_2017 <- recon[recon$year >= 2009 & recon$year <= 2017 & !is.na(recon$BAI), ]
+bai_2009_2024 <- recon[recon$year >= 2009 & recon$year <= 2024 & !is.na(recon$BAI), ]
 
 # Prepare seed data
-all_years <- 2009:2017
+all_years <- 2009:2024
 N_years <- length(all_years)
 year_lookup <- data.frame(year = all_years, year_idx = 1:N_years)
 
 seed_sub <- merge(seed_sub, year_lookup, by = "year")
 seed_sub <- seed_sub[seed_sub$year_idx >= 2, ]
 
-bai_2009_2017 <- merge(bai_2009_2017, year_lookup, by = "year")
+bai_2009_2024 <- merge(bai_2009_2024, year_lookup, by = "year")
 
 stan_data_growth <- list(
-  N = nrow(bai_2009_2017),
-  BAI = bai_2009_2017$BAI,
-  year = bai_2009_2017$year_idx,
+  N = nrow(bai_2009_2024),
+  BAI = bai_2009_2024$BAI,
+  year = bai_2009_2024$year_idx,
   N_years = N_years
 )
 
@@ -208,5 +210,45 @@ p <- ggplot(params_df, aes(x = parameter, y = mean)) +
     legend.box.background = element_rect(fill='transparent')
   )
 
+p
 ggsave("figures/parametersPrelim.png", p, bg="transparent")
 
+# Manually plot the model results with CI, adapted this code from egret budseed model visualization
+Gbar_draws  <- as.matrix(fit, pars = "Gbar")
+Gbar_mean <- colMeans(Gbar_draws)
+
+Gbar_seq <- seq(min(Gbar_mean), max(Gbar_mean), length.out = 50)
+
+G_obs  <- Gbar_mean[stan_data_filled$year_sc]
+sc_obs_log <- log(stan_data_filled$sc) 
+
+pred_draws_log <- sapply(Gbar_seq, function(g) {
+  post$alpha_sc + post$gamma_current * g + post$gamma_lag * mean(Gbar_mean)
+})
+
+# Make the dataframe so I can use ggplot2 to make a plot with transparent background
+pred_df_log <- data.frame(
+  G = Gbar_seq,
+  mean = colMeans(pred_draws_log),
+  low  = apply(pred_draws_log, 2, quantile, probs = 0.1),
+  high = apply(pred_draws_log, 2, quantile, probs = 0.9)
+)
+
+obs_df_log <- data.frame(G = G_obs, sc = sc_obs_log)
+
+ggplot() +
+  geom_ribbon(data = pred_df_log, aes(x = G, ymin = low, ymax = high),
+              fill = "steelblue", alpha = 0.3) +
+  geom_line(data = pred_df_log, aes(x = G, y = mean),
+            color = "steelblue", size = 1.2) +
+  geom_point(data = obs_df_log, aes(x = G, y = sc),
+             size = 3, color = "black") +
+  labs(x = "Growth deviation (G)", y = "log(seed count)")  +
+  theme_minimal(base_size = 14) + theme(
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
