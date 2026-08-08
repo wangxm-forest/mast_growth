@@ -27,7 +27,7 @@ ring <- sapply(split(seq_along(treeID), treeID), function(i) {
 
 rownames(ring) <- rownames(AB08THSE)
 # Merge all available seed data
-merge <- TRUE
+merge <- FALSE
 if(merge){
 seed <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/MORA_cleanseeds_2009-2017.csv")
 y2018 <- read.csv("C:/PhD/Project/Masting/data/rawdata/sortedseeds/clean&notes/SortedSeeds_MORA_2018.csv",header = TRUE)
@@ -51,19 +51,27 @@ write.csv(fullSeed,"C:/PhD/Project/PhD_thesis/mast_growth/data/seedMORAFull.csv"
 seed <- read.csv("C:/PhD/Project/PhD_thesis/mast_growth/data/seedMORAFull.csv",header = TRUE)
 
 # Make new columns for total seeds and total filled seeds
-seed$totalseeds <- seed$filledseeds + seed$emptyseeds + seed$conefilledseeds + seed$coneemptyseeds
+# Since cone filled seeds data are not available during 2009-2012, I will make a dataframe separately for total seeds and total filled seeds
+seed$totalseeds <- seed$filledseeds + seed$emptyseeds + seed$totconeseeds
 
 seed$totalfilled <- seed$filledseeds + seed$conefilledseeds
-seed_stand <- aggregate(
-  cbind(filledseeds, totalseeds) ~ year + stand + species,
+seed_stand_total <- aggregate(
+  totalseeds ~ year + stand + species,
   data = seed,
   FUN = sum,
   na.rm = TRUE
 )
 
+seed_stand_filled <- aggregate(
+  totalfilled ~ year + stand + species,
+  data = seed,
+  FUN = sum,
+  na.rm = TRUE
+)
 # subset seed data
 
-seed_sub <- seed_stand[seed_stand$stand == "AB08" & seed_stand$species == "TSHE", ]
+seed_sub_total <- seed_stand_total[seed_stand_total$stand == "AB08" & seed_stand_total$species == "TSHE", ]
+seed_sub_filled <- seed_stand_filled[seed_stand_filled$stand == "AB08" & seed_stand_filled$species == "TSHE", ]
 
 
 # Read in the DBH data
@@ -130,52 +138,47 @@ recon <- recon[order(recon$TAG, recon$year), ]
 recon$BA <- pi * recon$radius^2
 recon$BAI <- ave(recon$BA, recon$TAG, FUN = function(x) c(NA, diff(x)))
 
-bai_2009_2024 <- recon[recon$year >= 2009 & recon$year <= 2024 & !is.na(recon$BAI), ]
 
-# Prepare seed data
-all_years <- 2009:2024
+
+# Prepare seed data for filled seeds
+bai_2013_2024 <- recon[recon$year >= 2013 & recon$year <= 2024 & !is.na(recon$BAI), ]
+all_years <- 2013:2024
 N_years <- length(all_years)
 year_lookup <- data.frame(year = all_years, year_idx = 1:N_years)
-
-seed_sub <- merge(seed_sub, year_lookup, by = "year")
-seed_sub <- seed_sub[seed_sub$year_idx >= 2, ]
-
-bai_2009_2024 <- merge(bai_2009_2024, year_lookup, by = "year")
+seed_sub_filled <- merge(seed_sub_filled, year_lookup, by = "year")
+seed_sub_filled <- seed_sub_filled[seed_sub_filled$year_idx >= 2, ]
+bai_2013_2024 <- merge(bai_2013_2024, year_lookup, by = "year")
 
 stan_data_growth <- list(
-  N = nrow(bai_2009_2024),
-  BAI = bai_2009_2024$BAI,
-  year = bai_2009_2024$year_idx,
+  N = nrow(bai_2013_2024),
+  BAI = bai_2013_2024$BAI,
+  year = bai_2013_2024$year_idx,
   N_years = N_years
 )
 
 stan_data_filled <- c(stan_data_growth, list(
-  N_sc = nrow(seed_sub),
-  sc = seed_sub$totalfilled,
-  year_sc = seed_sub$year_idx
+  N_sc = nrow(seed_sub_filled),
+  sc = seed_sub_filled$totalfilled,
+  year_sc = seed_sub_filled$year_idx
 ))
 
-stan_data_filled$sc <- seed_sub$filledseeds + 1
 
-stan_data_total <- c(stan_data_growth, list(
-  N_sc = nrow(seed_sub),
-  sc = seed_sub$totalseeds,
-  year_sc = seed_sub$year_idx
-))
+# run stan model with filled seeds
 
 mod <- stan_model(file='C:/PhD/Project/PhD_thesis/mast_growth/analyses/stan/simpleTradeOff.stan')
 
-fit <- stan(file='C:/PhD/Project/PhD_thesis/mast_growth/analyses/stan/simpleTradeOff.stan', data=stan_data_filled, seed=112234, control=list(adapt_delta=0.99))
+fit_filled <- stan(file='C:/PhD/Project/PhD_thesis/mast_growth/analyses/stan/simpleTradeOff.stan', data=stan_data_filled, seed=112234, control=list(adapt_delta=0.99))
 
+# Plotting the parameters for model results with filled seeds
 util <- new.env()
 source('mcmc_analysis_tools_rstan.R', local=util)
 source('mcmc_visualization_tools.R', local=util)
 
-diagnostics <- util$extract_hmc_diagnostics(fit)
+diagnostics <- util$extract_hmc_diagnostics(fit_filled)
 
 print(util$check_all_hmc_diagnostics(diagnostics))
 
-samples <- util$extract_expectand_vals(fit)
+samples <- util$extract_expectand_vals(fit_filled)
 names <- c(grep('alpha_BAI', names(samples), value = TRUE),
            grep('sigma_BAI', names(samples), value = TRUE),
            grep('alpha_sc', names(samples), value = TRUE),
@@ -185,9 +188,9 @@ names <- c(grep('alpha_BAI', names(samples), value = TRUE),
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
-print(fit, pars = names)
+print(fit_filled, pars = names)
 
-post <- as.data.frame(fit)
+post <- as.data.frame(fit_filled)
 
 params_df <- data.frame(
   parameter = c("gamma_current", "gamma_lag"),
@@ -198,9 +201,13 @@ params_df <- data.frame(
 
 p <- ggplot(params_df, aes(x = parameter, y = mean)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
-  geom_pointrange(aes(ymin = lower, ymax = upper), size = 1) +
+  geom_pointrange(aes(ymin = lower, ymax = upper), size = 1, color = "#1D5145")  +
+  scale_x_discrete(labels = c(
+    "gamma_current" = expression(gamma[current]),
+    "gamma_lag"     = expression(gamma[lag])
+  )) +
   labs(y = "Effect on log(expected seed count)", x = NULL) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 25) +
   coord_flip() + theme(
     panel.background = element_rect(fill='transparent'),
     plot.background = element_rect(fill='transparent', color=NA),
@@ -211,10 +218,10 @@ p <- ggplot(params_df, aes(x = parameter, y = mean)) +
   )
 
 p
-ggsave("figures/parametersPrelim.png", p, bg="transparent")
+ggsave("figures/parametersFilledSeeds.png", p, bg="transparent")
 
 # Manually plot the model results with CI, adapted this code from egret budseed model visualization
-Gbar_draws  <- as.matrix(fit, pars = "Gbar")
+Gbar_draws  <- as.matrix(fit_filled, pars = "Gbar")
 Gbar_mean <- colMeans(Gbar_draws)
 
 Gbar_seq <- seq(min(Gbar_mean), max(Gbar_mean), length.out = 50)
@@ -236,15 +243,15 @@ pred_df_log <- data.frame(
 
 obs_df_log <- data.frame(G = G_obs, sc = sc_obs_log)
 
-ggplot() +
+p <- ggplot() +
   geom_ribbon(data = pred_df_log, aes(x = G, ymin = low, ymax = high),
-              fill = "steelblue", alpha = 0.3) +
+              fill = "#9BAEAA", alpha = 0.3) +
   geom_line(data = pred_df_log, aes(x = G, y = mean),
-            color = "steelblue", size = 1.2) +
+            color = "#1D5145", size = 1.2) +
   geom_point(data = obs_df_log, aes(x = G, y = sc),
              size = 3, color = "black") +
-  labs(x = "Growth deviation (G)", y = "log(seed count)")  +
-  theme_minimal(base_size = 14) + theme(
+  labs(x = "Growth deviation (G)", y = "log (seed count)")  +
+  theme_minimal(base_size = 25) + theme(
     panel.background = element_rect(fill='transparent'),
     plot.background = element_rect(fill='transparent', color=NA),
     panel.grid.major = element_blank(),
@@ -252,3 +259,127 @@ ggplot() +
     legend.background = element_rect(fill='transparent'),
     legend.box.background = element_rect(fill='transparent')
   )
+
+p
+
+ggsave("figures/predictsFilledGvsR.png", p, bg="transparent")
+
+# Prepare seed data for all seeds
+bai_2010_2024 <- recon[recon$year >= 2010 & recon$year <= 2024 & !is.na(recon$BAI), ]
+all_years <- 2010:2024
+N_years <- length(all_years)
+year_lookup <- data.frame(year = all_years, year_idx = 1:N_years)
+seed_sub_total <- merge(seed_sub_total, year_lookup, by = "year")
+seed_sub_total <- seed_sub_total[seed_sub_total$year_idx >= 2, ]
+bai_2010_2024 <- merge(bai_2010_2024, year_lookup, by = "year")
+
+stan_data_growth <- list(
+  N = nrow(bai_2010_2024),
+  BAI = bai_2010_2024$BAI,
+  year = bai_2010_2024$year_idx,
+  N_years = N_years
+)
+
+stan_data_total <- c(stan_data_growth, list(
+  N_sc = nrow(seed_sub_total),
+  sc = seed_sub_total$totalseeds,
+  year_sc = seed_sub_total$year_idx
+))
+
+fit_all <- stan(file='C:/PhD/Project/PhD_thesis/mast_growth/analyses/stan/simpleTradeOff.stan', data=stan_data_total, seed=112234, control=list(adapt_delta=0.99))
+
+
+# Plotting the parameters for model results with all seeds
+util <- new.env()
+source('mcmc_analysis_tools_rstan.R', local=util)
+source('mcmc_visualization_tools.R', local=util)
+
+diagnostics <- util$extract_hmc_diagnostics(fit_all)
+
+print(util$check_all_hmc_diagnostics(diagnostics))
+
+samples <- util$extract_expectand_vals(fit_all)
+names <- c(grep('alpha_BAI', names(samples), value = TRUE),
+           grep('sigma_BAI', names(samples), value = TRUE),
+           grep('alpha_sc', names(samples), value = TRUE),
+           grep('gamma_current', names(samples), value = TRUE),
+           grep('gamma_lag', names(samples), value = TRUE),
+           grep('sigma_sc', names(samples), value = TRUE))
+
+base_samples <- util$filter_expectands(samples,names)
+print(util$check_all_expectand_diagnostics(base_samples))
+print(fit_all, pars = names)
+
+post <- as.data.frame(fit_all)
+
+params_df <- data.frame(
+  parameter = c("gamma_current", "gamma_lag"),
+  mean = c(mean(post$gamma_current), mean(post$gamma_lag)),
+  lower = c(quantile(post$gamma_current, 0.025), quantile(post$gamma_lag, 0.025)),
+  upper = c(quantile(post$gamma_current, 0.975), quantile(post$gamma_lag, 0.975))
+)
+
+p <- ggplot(params_df, aes(x = parameter, y = mean)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_pointrange(aes(ymin = lower, ymax = upper), size = 1, color = "#1D5145")  +
+  scale_x_discrete(labels = c(
+    "gamma_current" = expression(gamma[current]),
+    "gamma_lag"     = expression(gamma[lag])
+  )) +
+  labs(y = "Effect on log(expected seed count)", x = NULL) +
+  theme_minimal(base_size = 25) +
+  coord_flip() + theme(
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+
+p
+ggsave("figures/parametersAllSeeds.png", p, bg="transparent")
+
+# Manually plot the model results with CI, adapted this code from egret budseed model visualization
+Gbar_draws  <- as.matrix(fit_all, pars = "Gbar")
+Gbar_mean <- colMeans(Gbar_draws)
+
+Gbar_seq <- seq(min(Gbar_mean), max(Gbar_mean), length.out = 50)
+
+G_obs  <- Gbar_mean[stan_data_total$year_sc]
+sc_obs_log <- log(stan_data_total$sc) 
+
+pred_draws_log <- sapply(Gbar_seq, function(g) {
+  post$alpha_sc + post$gamma_current * g + post$gamma_lag * mean(Gbar_mean)
+})
+
+# Make the dataframe so I can use ggplot2 to make a plot with transparent background
+pred_df_log <- data.frame(
+  G = Gbar_seq,
+  mean = colMeans(pred_draws_log),
+  low  = apply(pred_draws_log, 2, quantile, probs = 0.1),
+  high = apply(pred_draws_log, 2, quantile, probs = 0.9)
+)
+
+obs_df_log <- data.frame(G = G_obs, sc = sc_obs_log)
+
+p <- ggplot() +
+  geom_ribbon(data = pred_df_log, aes(x = G, ymin = low, ymax = high),
+              fill = "#9BAEAA", alpha = 0.3) +
+  geom_line(data = pred_df_log, aes(x = G, y = mean),
+            color = "#1D5145", size = 1.2) +
+  geom_point(data = obs_df_log, aes(x = G, y = sc),
+             size = 3, color = "black") +
+  labs(x = "Growth deviation (G)", y = "log (seed count)")  +
+  theme_minimal(base_size = 25) + theme(
+    panel.background = element_rect(fill='transparent'),
+    plot.background = element_rect(fill='transparent', color=NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.background = element_rect(fill='transparent'),
+    legend.box.background = element_rect(fill='transparent')
+  )
+
+p
+
+ggsave("figures/predictsTotalGvsR.png", p, bg="transparent")
