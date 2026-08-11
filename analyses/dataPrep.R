@@ -349,6 +349,7 @@ Gbar_seq <- seq(min(Gbar_mean), max(Gbar_mean), length.out = 50)
 G_obs  <- Gbar_mean[stan_data_total$year_sc]
 sc_obs_log <- log(stan_data_total$sc) 
 
+#I am taking the mean of Gbar for lag effect, but maybe this is not the beset approach. Can talk to people at stan con
 pred_draws_log <- sapply(Gbar_seq, function(g) {
   post$alpha_sc + post$gamma_current * g + post$gamma_lag * mean(Gbar_mean)
 })
