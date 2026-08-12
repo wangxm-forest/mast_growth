@@ -207,7 +207,7 @@ p <- ggplot(params_df, aes(x = parameter, y = mean)) +
     "gamma_lag"     = expression(gamma[lag])
   )) +
   labs(y = "Effect on log(expected seed count)", x = NULL) +
-  theme_minimal(base_size = 25) +
+  theme_minimal(base_size = 20) +
   coord_flip() + theme(
     panel.background = element_rect(fill='transparent'),
     plot.background = element_rect(fill='transparent', color=NA),
@@ -250,8 +250,8 @@ p <- ggplot() +
             color = "#1D5145", size = 1.2) +
   geom_point(data = obs_df_log, aes(x = G, y = sc),
              size = 3, color = "black") +
-  labs(x = "Growth deviation (G)", y = "log (seed count)")  +
-  theme_minimal(base_size = 25) + theme(
+  labs(x = bquote('Growth deviation (G)'~(cm^2/year)), y = "log (seed count)")  +
+  theme_minimal(base_size = 20) + theme(
     panel.background = element_rect(fill='transparent'),
     plot.background = element_rect(fill='transparent', color=NA),
     panel.grid.major = element_blank(),
@@ -327,7 +327,7 @@ p <- ggplot(params_df, aes(x = parameter, y = mean)) +
     "gamma_lag"     = expression(gamma[lag])
   )) +
   labs(y = "Effect on log(expected seed count)", x = NULL) +
-  theme_minimal(base_size = 25) +
+  theme_minimal(base_size = 20) +
   coord_flip() + theme(
     panel.background = element_rect(fill='transparent'),
     plot.background = element_rect(fill='transparent', color=NA),
@@ -371,8 +371,8 @@ p <- ggplot() +
             color = "#1D5145", size = 1.2) +
   geom_point(data = obs_df_log, aes(x = G, y = sc),
              size = 3, color = "black") +
-  labs(x = "Growth deviation (G)", y = "log (seed count)")  +
-  theme_minimal(base_size = 25) + theme(
+  labs(x = bquote('Growth deviation (G)'~(cm^2/year)), y = "log (seed count)")  +
+  theme_minimal(base_size = 20) + theme(
     panel.background = element_rect(fill='transparent'),
     plot.background = element_rect(fill='transparent', color=NA),
     panel.grid.major = element_blank(),
