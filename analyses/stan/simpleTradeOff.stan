@@ -6,6 +6,7 @@ data {
   vector[N] BAI;
   int<lower=1> year[N];
   int<lower=1> N_years;
+  vector[N_years] Temp;
 
   int<lower=1> N_sc;
   vector[N_sc] sc;
@@ -16,10 +17,12 @@ parameters {
   // seed
   real alpha_sc;
   real<lower=0> sigma_sc;
+  real beta_sc_temp;
   
   //growth
   real alpha_BAI;
   real<lower=0> sigma_BAI;
+  real beta_BAI_temp;
   
   
   //trade-off
@@ -29,7 +32,7 @@ parameters {
 }
 
 transformed parameters {
-  vector[N] G = BAI - alpha_BAI;
+  vector[N] G = BAI - alpha_BAI - beta_BAI_temp * Temp[year];
 
   vector[N_years] Gbar;
   {
@@ -46,20 +49,23 @@ transformed parameters {
 model {
   alpha_BAI ~ normal(7, 3);
   sigma_BAI ~ normal(0, 1);
+  beta_BAI_temp ~ normal(0, 1);
 
   alpha_sc ~ normal(0, 1);
   gamma_current ~ normal(0, 1);
   gamma_lag ~ normal(0, 1);
   sigma_sc ~ normal(0, 1);
+  beta_sc_temp ~ normal(0, 1);
 
-  BAI ~ normal(alpha_BAI, sigma_BAI);
+  BAI ~ normal(alpha_BAI + beta_BAI_temp * Temp[year], sigma_BAI);
 
   vector[N_sc] log_mu_sc;
   
   for (n in 1:N_sc){
     log_mu_sc[n] = alpha_sc
                  + gamma_current * Gbar[year_sc[n]]
-                 + gamma_lag * Gbar[year_sc[n] - 1];}
+                 + gamma_lag * Gbar[year_sc[n] - 1]
+                 + beta_sc_temp * Temp[year_sc[n]];}
 
   sc ~ lognormal(log_mu_sc, sigma_sc);
 }

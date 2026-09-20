@@ -521,17 +521,20 @@ N_years <- 15
 
 alpha_BAI <- 7.5
 sigma_BAI <- 1.2 
+beta_BAI_temp <- 0.3
 alpha_sc <- 0.6
 gamma_current <- -3
 gamma_lag <- -0.5
+beta_sc_temp <- 0.3
 sigma_sc <- 0.3
 
+Temp <- rnorm (N_years, 0, 1)
 d <- expand.grid(tree = 1:N, year = 1:N_years)
-d$BAI <- rnorm(nrow(d), mean = alpha_BAI, sd = sigma_BAI)
+d$BAI <- rnorm(nrow(d), mean = alpha_BAI + beta_BAI_temp * d$Temp, sd = sigma_BAI)
 
 d$BAI[d$BAI < 0] <- 0.1
 
-d$G <- d$BAI - alpha_BAI
+d$G <- d$BAI - alpha_BAI - beta_BAI_temp * d$Temp
 
 Gbar <- tapply(d$G, d$year, mean)
 Gbar <- as.numeric(Gbar[order(as.numeric(names(Gbar)))])
@@ -541,7 +544,8 @@ seed_years <- 2:N_years
 d_sc <- expand.grid(tree = 1:N, year = seed_years)
 log_mu_sc <- alpha_sc +
   gamma_current * Gbar[d_sc$year] +
-  gamma_lag * Gbar[d_sc$year - 1]
+  gamma_lag * Gbar[d_sc$year - 1] +
+  beta_sc_temp * Temp[d_sc$year]
 
 d_sc$sc <- rlnorm(nrow(d_sc), meanlog = log_mu_sc, sdlog = sigma_sc)
 
@@ -550,6 +554,7 @@ stanData <- list(
   BAI = d$BAI,
   year = d$year,
   N_years = N_years,
+  Temp = Temp,
   
   N_sc = nrow(d_sc),
   sc = d_sc$sc,
