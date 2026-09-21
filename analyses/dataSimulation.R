@@ -528,8 +528,9 @@ gamma_lag <- -0.5
 beta_sc_temp <- 0.3
 sigma_sc <- 0.3
 
-Temp <- rnorm (N_years, 0, 1)
+Temp <- rnorm (N_years, 0, 5)
 d <- expand.grid(tree = 1:N, year = 1:N_years)
+d$Temp <- Temp[d$year]
 d$BAI <- rnorm(nrow(d), mean = alpha_BAI + beta_BAI_temp * d$Temp, sd = sigma_BAI)
 
 d$BAI[d$BAI < 0] <- 0.1
@@ -574,7 +575,9 @@ names <- c(grep('alpha_BAI', names(samples), value = TRUE),
            grep('alpha_sc', names(samples), value = TRUE),
            grep('gamma_current', names(samples), value = TRUE),
            grep('gamma_lag', names(samples), value = TRUE),
-           grep('sigma_sc', names(samples), value = TRUE))
+           grep('sigma_sc', names(samples), value = TRUE),
+           grep('beta_BAI_temp', names(samples), value = TRUE),
+           grep('beta_sc_temp', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
@@ -593,6 +596,13 @@ curve(dnorm(x, 7,3),
       lwd = 2)
 abline(v = 7.5, col = "red", lwd = 2)
 
+util$plot_expectand_pushforward(samples[['beta_BAI_temp']], 50, display_name = "beta_BAI_temp")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.3, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['sigma_BAI']], 50, display_name = "sigma_BAI")
 curve(dnorm(x, 0, 1),
@@ -625,6 +635,14 @@ curve(dnorm(x, 0, 1),
       lwd = 2,
       lty = 2)
 abline(v = -0.5, col = "red", lwd = 2)
+
+util$plot_expectand_pushforward(samples[['beta_sc_temp']], 50, display_name = "beta_sc_temp")
+curve(dnorm(x, 0, 1),
+      add = TRUE,
+      col = "blue",
+      lwd = 2,
+      lty = 2)
+abline(v = 0.3, col = "red", lwd = 2)
 
 util$plot_expectand_pushforward(samples[['sigma_sc']], 50, display_name = "sigma_sc")
 curve(dnorm(x, 0, 1),
