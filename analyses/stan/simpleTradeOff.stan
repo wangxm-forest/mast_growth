@@ -59,13 +59,13 @@ model {
 
   BAI ~ normal(alpha_BAI + beta_BAI_temp * Temp[year], sigma_BAI);
 
-  vector[N_sc] log_mu_sc;
+  vector[N_sc] mu_sc;
   
   for (n in 1:N_sc){
-    log_mu_sc[n] = alpha_sc
+    mu_sc[n] = alpha_sc
                  + gamma_current * Gbar[year_sc[n]]
                  + gamma_lag * Gbar[year_sc[n] - 1]
                  + beta_sc_temp * Temp[year_sc[n]];}
 
-  sc ~ lognormal(log_mu_sc, sigma_sc);
+  sc ~ lognormal(mu_sc, sigma_sc);
 }
