@@ -138,22 +138,28 @@ recon <- recon[order(recon$TAG, recon$year), ]
 recon$BA <- pi * recon$radius^2
 recon$BAI <- ave(recon$BA, recon$TAG, FUN = function(x) c(NA, diff(x)))
 
-
+# Read in climate data
+all_years <- 2013:2023
+wldas_climpredictors_2013 <- wldas_climpredictors_updated[wldas_climpredictors_updated$year %in% all_years, ]
+## subset to AB08
+climate_AB08 <- wldas_climpredictors_2013[wldas_climpredictors_2013$plotname == "AB08",]
 
 # Prepare seed data for filled seeds
-bai_2013_2024 <- recon[recon$year >= 2013 & recon$year <= 2024 & !is.na(recon$BAI), ]
-all_years <- 2013:2024
+bai_2013_2023 <- recon[recon$year >= 2013 & recon$year <= 2023 & !is.na(recon$BAI), ]
+
 N_years <- length(all_years)
 year_lookup <- data.frame(year = all_years, year_idx = 1:N_years)
 seed_sub_filled <- merge(seed_sub_filled, year_lookup, by = "year")
 seed_sub_filled <- seed_sub_filled[seed_sub_filled$year_idx >= 2, ]
-bai_2013_2024 <- merge(bai_2013_2024, year_lookup, by = "year")
+bai_2013_2023 <- merge(bai_2013_2023, year_lookup, by = "year")
+
 
 stan_data_growth <- list(
-  N = nrow(bai_2013_2024),
-  BAI = bai_2013_2024$BAI,
-  year = bai_2013_2024$year_idx,
-  N_years = N_years
+  N = nrow(bai_2013_2023),
+  BAI = bai_2013_2023$BAI,
+  year = bai_2013_2023$year_idx,
+  N_years = N_years,
+  Temp = climate_AB08$soilmoist_ings
 )
 
 stan_data_filled <- c(stan_data_growth, list(
@@ -184,7 +190,9 @@ names <- c(grep('alpha_BAI', names(samples), value = TRUE),
            grep('alpha_sc', names(samples), value = TRUE),
            grep('gamma_current', names(samples), value = TRUE),
            grep('gamma_lag', names(samples), value = TRUE),
-           grep('sigma_sc', names(samples), value = TRUE))
+           grep('sigma_sc', names(samples), value = TRUE),
+           grep('beta_BAI_temp', names(samples), value = TRUE),
+           grep('beta_sc_temp', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))
@@ -195,8 +203,8 @@ post <- as.data.frame(fit_filled)
 params_df <- data.frame(
   parameter = c("gamma_current", "gamma_lag"),
   mean = c(mean(post$gamma_current), mean(post$gamma_lag)),
-  lower = c(quantile(post$gamma_current, 0.025), quantile(post$gamma_lag, 0.025)),
-  upper = c(quantile(post$gamma_current, 0.975), quantile(post$gamma_lag, 0.975))
+  lower = c(quantile(post$gamma_current, 0.100), quantile(post$gamma_lag, 0.100)),
+  upper = c(quantile(post$gamma_current, 0.900), quantile(post$gamma_lag, 0.900))
 )
 
 p <- ggplot(params_df, aes(x = parameter, y = mean)) +
@@ -265,19 +273,25 @@ p
 ggsave("figures/predictsFilledGvsR.png", p, bg="transparent")
 
 # Prepare seed data for all seeds
-bai_2010_2024 <- recon[recon$year >= 2010 & recon$year <= 2024 & !is.na(recon$BAI), ]
-all_years <- 2010:2024
+bai_2010_2023 <- recon[recon$year >= 2010 & recon$year <= 2023 & !is.na(recon$BAI), ]
+all_years <- 2010:2023
 N_years <- length(all_years)
 year_lookup <- data.frame(year = all_years, year_idx = 1:N_years)
 seed_sub_total <- merge(seed_sub_total, year_lookup, by = "year")
 seed_sub_total <- seed_sub_total[seed_sub_total$year_idx >= 2, ]
-bai_2010_2024 <- merge(bai_2010_2024, year_lookup, by = "year")
+bai_2010_2023 <- merge(bai_2010_2023, year_lookup, by = "year")
+
+wldas_climpredictors_2010 <- wldas_climpredictors_updated[wldas_climpredictors_updated$year %in% all_years, ]
+## subset to AB08
+climate_AB08 <- wldas_climpredictors_2010[wldas_climpredictors_2010$plotname == "AB08",]
+
 
 stan_data_growth <- list(
-  N = nrow(bai_2010_2024),
-  BAI = bai_2010_2024$BAI,
-  year = bai_2010_2024$year_idx,
-  N_years = N_years
+  N = nrow(bai_2010_2023),
+  BAI = bai_2010_2023$BAI,
+  year = bai_2010_2023$year_idx,
+  N_years = N_years,
+  Temp = climate_AB08$soilmoist_ings
 )
 
 stan_data_total <- c(stan_data_growth, list(
@@ -304,7 +318,9 @@ names <- c(grep('alpha_BAI', names(samples), value = TRUE),
            grep('alpha_sc', names(samples), value = TRUE),
            grep('gamma_current', names(samples), value = TRUE),
            grep('gamma_lag', names(samples), value = TRUE),
-           grep('sigma_sc', names(samples), value = TRUE))
+           grep('sigma_sc', names(samples), value = TRUE),
+           grep('beta_BAI_temp', names(samples), value = TRUE),
+           grep('beta_sc_temp', names(samples), value = TRUE))
 
 base_samples <- util$filter_expectands(samples,names)
 print(util$check_all_expectand_diagnostics(base_samples))

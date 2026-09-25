@@ -543,12 +543,12 @@ Gbar <- as.numeric(Gbar[order(as.numeric(names(Gbar)))])
 seed_years <- 2:N_years
 
 d_sc <- expand.grid(tree = 1:N, year = seed_years)
-log_mu_sc <- alpha_sc +
+mu_sc <- alpha_sc +
   gamma_current * Gbar[d_sc$year] +
   gamma_lag * Gbar[d_sc$year - 1] +
   beta_sc_temp * Temp[d_sc$year]
 
-d_sc$sc <- rlnorm(nrow(d_sc), meanlog = log_mu_sc, sdlog = sigma_sc)
+d_sc$sc <- rlnorm(nrow(d_sc), meanlog = mu_sc, sdlog = sigma_sc)
 
 stanData <- list(
   N = nrow(d),
@@ -655,6 +655,7 @@ abline(v = 0.3, col = "red", lwd = 2)
 dev.off()
 
 ### Ines model
+### Failed to reproduce
 rm(list = ls())
 options(stringsAsFactors = FALSE)
 options(mc.cores = parallel::detectCores())
