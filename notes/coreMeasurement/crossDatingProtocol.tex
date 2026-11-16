@@ -1,0 +1,36 @@
+\documentclass[11pt,letter]{article}
+\usepackage[top=1.00in, bottom=1.0in, left=1.1in, right=1.1in]{geometry}
+\renewcommand{\baselinestretch}{1.5}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{hyperref}
+
+\def\labelitemi{--}
+\begin{document}
+
+\title{Crossdating protocol} 
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+Crossdating is the technique that ensures each individual tree ring is assigned its exact year of formation. This is accomplished by matching patterns of wide and narrow rings between cores from the same tree and between trees from different locations. In our case, usually our cores are complete which means we know the year of formation for our last ring. However, during the measurement, there might be occasions when the rings are fainted or very narrow or even missing for certain years, which likely will disrupt the matching patterns between cores. There are multiple ways of doing crossdating, the software CDendro can be a great tool providing visual pattern checking and you can also easily make changes in CooRecorder from there. The other more statistical method is doing the crossdating using COFECHA. This tool tells us how good our crossdating is and the possibility of misidentified rings.
+
+\section{Crossdating with CDendro}
+\begin{enumerate}
+\item Open CDendro
+\item Go to Collections on the navigation bar, go to Open menu for collections... then Open Tucson .rwl collection
+\item In the window, go to your reference chronology (same stand and same species as the cores you are going to crossdate)
+\item A window with many cores will pop up, click on Create Mean value sample
+\item A new window will pop up showing the averaged ring pattern for this species at this stand
+\item Go to Samples on the navigation bar, go to Open single sample files, then click Open CooRecorder/CDendro coordinates files
+\item Select one core for crossdating, make sure it is the same species from the same stand compared to the reference chronology
+\item Click the Workbech tab in the new window
+\item Click Set date of youngest ring, type in 2024 if this core does not have a missing tip (if this core has a missing tip, you will have to play with the offset years see where you can find the best matching then decide which year it is for the youngest ring on this core)
+\item Go to Samples on the navigation bar again, click Save coordinate data to save your changes
+\item Go back to the Curve display tab, if 2024 is the youngest ring, type -15 for Offset
+\item Check the overall correlation by looking at the number in CoorC/TT,  and also check for whether there are some segments with very low correlation
+\item If the correlation is very low and it is obviously caused by a missing ring or an additional ring, click the CooRecorder icon on the navigation bar to go back to CooRecorder
+\item Check if you can find any missed ring or additional rings to improve the correlation, if not, just leave a note
+\item Once you are done, type the final overall correlation in the CrossDating column in the shared excel sheet
+	\end{enumerate}
+\end{document}
